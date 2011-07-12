@@ -53,7 +53,7 @@ EOF
 	echo >&3 "<tr><th>Picture</th>"
 	echo >&3 "<th>Original</th>"
 	echo >&3 "<th>nvcompress</th>"
-t 	echo >&3 "<th>rand64-sRGB</th>"
+	echo >&3 "<th>rand64-sRGB</th>"
 #	echo >&3 "<th>norand-sRGB</th>"
 	echo >&3 "<th>rand64-sRGB-mixed</th>"
 #	echo >&3 "<th>norand-sRGB-mixed</th>"
