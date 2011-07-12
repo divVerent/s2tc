@@ -517,20 +517,38 @@ namespace
 	}
 };
 
-void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h, int alpharange)
+void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h, int srccomps, int bgr, int alpharange)
 {
 	int x, y;
 	float diffuse_r = 0;
 	float diffuse_g = 0;
 	float diffuse_b = 0;
 	float diffuse_a = 0;
-	for(y = 0; y < h; ++y)
-		for(x = 0; x < w; ++x)
-		{
-			out[(x + y * w) * 4 + 2] = diffuse(&diffuse_r, rgba[(x + y * w) * 4 + 2] * 31.0 / 255.0);
-			out[(x + y * w) * 4 + 1] = diffuse(&diffuse_g, rgba[(x + y * w) * 4 + 1] * 63.0 / 255.0);
-			out[(x + y * w) * 4 + 0] = diffuse(&diffuse_b, rgba[(x + y * w) * 4 + 0] * 31.0 / 255.0);
-			out[(x + y * w) * 4 + 3] = diffuse(&diffuse_a, rgba[(x + y * w) * 4 + 3] * (alpharange / 255.0));
-		}
+	if(bgr)
+	{
+		for(y = 0; y < h; ++y)
+			for(x = 0; x < w; ++x)
+			{
+				out[(x + y * w) * 4 + 2] = diffuse(&diffuse_r, rgba[(x + y * w) * srccomps + 2] * 31.0 / 255.0);
+				out[(x + y * w) * 4 + 1] = diffuse(&diffuse_g, rgba[(x + y * w) * srccomps + 1] * 63.0 / 255.0);
+				out[(x + y * w) * 4 + 0] = diffuse(&diffuse_b, rgba[(x + y * w) * srccomps + 0] * 31.0 / 255.0);
+			}
+	}
+	else
+	{
+		for(y = 0; y < h; ++y)
+			for(x = 0; x < w; ++x)
+			{
+				out[(x + y * w) * 4 + 2] = diffuse(&diffuse_r, rgba[(x + y * w) * srccomps + 0] * 31.0 / 255.0);
+				out[(x + y * w) * 4 + 1] = diffuse(&diffuse_g, rgba[(x + y * w) * srccomps + 1] * 63.0 / 255.0);
+				out[(x + y * w) * 4 + 0] = diffuse(&diffuse_b, rgba[(x + y * w) * srccomps + 2] * 31.0 / 255.0);
+			}
+	}
+	if(srccomps == 4)
+	{
+		for(y = 0; y < h; ++y)
+			for(x = 0; x < w; ++x)
+				out[(x + y * w) * 4 + 3] = diffuse(&diffuse_a, rgba[(x + y * w) * srccomps + 3] * (alpharange / 255.0));
+	}
 }
 

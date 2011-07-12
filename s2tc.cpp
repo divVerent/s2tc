@@ -657,7 +657,7 @@ int main(int argc, char **argv)
 	unsigned char *opic = (unsigned char *) malloc(image_width * image_height * 4);
 	for(;;)
 	{
-		rgb565_image(opic, pic, image_width, image_height, alpharange);
+		rgb565_image(opic, pic, image_width, image_height, 4, 1, alpharange);
 		for(y = 0; y < image_height; y += 4)
 			for(x = 0; x < image_width; x += 4)
 			{
