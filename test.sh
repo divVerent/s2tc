@@ -87,12 +87,12 @@ t()
 {
 	in=$1; shift
 	out=$1; shift
-	time "$@" < "$in" > "$out"
+	[ -f "$out" ] || time "$@" < "$in" > "$out"
 	html "$out"
 }
 
 html_start
-for i in dxtfail base_concrete1a disabled floor_tile3a lift02 panel_ceil1a sunset amelia rms noise noise_solid supernova ishihara; do
+for i in dxtfail base_concrete1a disabled floor_tile3a lift02 panel_ceil1a sunset amelia rms noise noise_solid supernova ishihara augenkrebs; do
 	html_rowstart "$i"
 
 	html "$i".tga
