@@ -554,7 +554,7 @@ inline int color_dist_srgb(const color_t &a, const color_t &b)
 	return SHRR(sy, 4) + SHRR(su, 8) + SHRR(sv, 10);
 }
 
-// FIXME is this correct?
+// FIXME this is likely broken
 inline int color_dist_lab_srgb(const color_t &a, const color_t &b)
 {
 	// undo sRGB
