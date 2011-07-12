@@ -15,8 +15,6 @@ html_start()
 	echo >&3 "<tr><th>Picture</th>"
 	echo >&3 "<th>Original</th>"
 	echo >&3 "<th>nvcompress</th>"
-	echo >&3 "<th>rand64-L*a*b*</th>"
-	echo >&3 "<th>norand-L*a*b*</th>"
 	echo >&3 "<th>rand64-sRGB</th>"
 	echo >&3 "<th>norand-sRGB</th>"
 	echo >&3 "<th>rand64-YUV</th>"
@@ -62,16 +60,14 @@ for i in amelia dxtfail base_concrete1a disabled floor_tile3a lift02 panel_ceil1
 	nvcompress "$i".tga "$i".dds
 	html "$i".dds
 
-	t "$i".tga "$i"-rand64-lab.dds  ./s2tc -c LAB  -r 64
-	t "$i".tga "$i"-nogray-lab.dds  ./s2tc -c LAB  -r 0
 	t "$i".tga "$i"-rand64-srgb.dds ./s2tc -c SRGB -r 64
-	t "$i".tga "$i"-nogray-srgb.dds ./s2tc -c SRGB -r 0
+	t "$i".tga "$i"-norand-srgb.dds ./s2tc -c SRGB -r 0
 	t "$i".tga "$i"-rand64-yuv.dds  ./s2tc -c YUV  -r 64
-	t "$i".tga "$i"-nogray-yuv.dds  ./s2tc -c YUV  -r 0
+	t "$i".tga "$i"-norand-yuv.dds  ./s2tc -c YUV  -r 0
 	t "$i".tga "$i"-rand64.dds      ./s2tc -c RGB  -r 64
 	t "$i".tga "$i"-norand.dds      ./s2tc -c RGB  -r 0
 	t "$i".tga "$i"-rand64-avg.dds  ./s2tc -c AVG  -r 64
-	t "$i".tga "$i"-nogray-avg.dds  ./s2tc -c AVG  -r 0
+	t "$i".tga "$i"-norand-avg.dds  ./s2tc -c AVG  -r 0
 
 	html_rowend
 done

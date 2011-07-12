@@ -581,8 +581,8 @@ inline int color_dist_lab_srgb(const color_t &a, const color_t &b)
 	float bL = 116 * cbrtf(bY / Yn) - 16;
 	float bA = 500 * (cbrtf(bX / Xn) - cbrtf(bY / Yn));
 	float bB = 200 * (cbrtf(bY / Yn) - cbrtf(bZ / Zn));
-	// euclidean distance
-	return 100 * ((aL - bL) * (aL - bL) + (aA - bA) * (aA - bA) + (aB - bB) * (aB - bB));
+	// euclidean distance, but moving weight away from A and B
+	return 1000 * ((aL - bL) * (aL - bL) + (aA - bA) * (aA - bA) + (aB - bB) * (aB - bB));
 }
 
 inline int color_dist_normalmap(const color_t &a, const color_t &b)
