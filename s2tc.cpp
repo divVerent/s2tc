@@ -526,7 +526,9 @@ inline int color_dist_yuv(const color_t &a, const color_t &b)
 	int y = dr * 30*2 + dg * 59 + db * 11*2; // multiplier: 6259
 	int u = dr * 202 - y; // * 0.5 / (1 - 0.30)
 	int v = db * 202 - y; // * 0.5 / (1 - 0.11)
-	return ((y*y) << 1) + SHRR(u*u, 3) + SHRR(v*v, 5);
+	return ((y*y) << 1) + SHRR(u*u, 3) + SHRR(v*v, 4);
+	// weight for u: sqrt(2^-4) / (0.5 / (1 - 0.30)) = 0.350
+	// weight for v: sqrt(2^-5) / (0.5 / (1 - 0.11)) = 0.315
 }
 
 inline int color_dist_rgb(const color_t &a, const color_t &b)
@@ -537,7 +539,9 @@ inline int color_dist_rgb(const color_t &a, const color_t &b)
 	int y = dr * 21*2 + dg * 72 + db * 7*2; // multiplier: 6272
 	int u = dr * 202 - y; // * 0.5 / (1 - 0.21)
 	int v = db * 202 - y; // * 0.5 / (1 - 0.07)
-	return ((y*y) << 1) + SHRR(u*u, 3) + SHRR(v*v, 5);
+	return ((y*y) << 1) + SHRR(u*u, 3) + SHRR(v*v, 4);
+	// weight for u: sqrt(2^-4) / (0.5 / (1 - 0.21)) = 0.395
+	// weight for v: sqrt(2^-5) / (0.5 / (1 - 0.07)) = 0.328
 }
 
 inline int color_dist_srgb(const color_t &a, const color_t &b)
@@ -551,7 +555,9 @@ inline int color_dist_srgb(const color_t &a, const color_t &b)
 	int sy = SHRR(y, 3) * SHRR(y, 4);
 	int su = SHRR(u, 3) * SHRR(u, 4);
 	int sv = SHRR(v, 3) * SHRR(v, 4);
-	return SHRR(sy, 4) + SHRR(su, 8) + SHRR(sv, 10);
+	return SHRR(sy, 4) + SHRR(su, 8) + SHRR(sv, 9);
+	// weight for u: sqrt(2^-4) / (0.5 / (1 - 0.30)) = 0.350
+	// weight for v: sqrt(2^-5) / (0.5 / (1 - 0.11)) = 0.315
 }
 
 // FIXME this is likely broken
