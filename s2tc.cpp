@@ -560,6 +560,38 @@ inline int color_dist_srgb(const color_t &a, const color_t &b)
 	// weight for v: sqrt(2^-5) / (0.5 / (1 - 0.11)) = 0.315
 }
 
+inline int srgb_get_y(const color_t &a)
+{
+	// convert to linear
+	int r = a.r * (int) a.r;
+	int g = a.g * (int) a.g;
+	int b = a.b * (int) a.b;
+	// find luminance
+	int y = 37 * (r * 21*2*2 + g * 72 + b * 7*2*2); // multiplier: 14555800
+	// square root it (!)
+	y = sqrt(y); // now in range 0 to 3815
+	return y;
+}
+
+inline int color_dist_srgb_mixed(const color_t &a, const color_t &b)
+{
+	// get Y
+	int ay = srgb_get_y(a);
+	int by = srgb_get_y(b);
+	// get UV
+	int au = a.r * 20 - ay;
+	int av = a.b * 20 - ay;
+	int bu = b.r * 20 - by;
+	int bv = b.b * 20 - by;
+	// get differences
+	int y = ay - by;
+	int u = au - bu;
+	int v = av - bv;
+	return ((y*y) << 3) + SHRR(u*u, 1) + SHRR(v*v, 2);
+	// weight for u: ???
+	// weight for v: ???
+}
+
 // FIXME this is likely broken
 inline int color_dist_lab_srgb(const color_t &a, const color_t &b)
 {
@@ -775,6 +807,7 @@ enum ColorDistMode
 	RGB,
 	YUV,
 	SRGB,
+	SRGB_MIXED,
 	LAB,
 	AVG,
 	NORMALMAP
@@ -978,6 +1011,9 @@ void s2tc_encode_block(unsigned char *out, const unsigned char *rgba, int iw, in
 		case SRGB:
 			s2tc_encode_block<color_dist_srgb>(out, rgba, iw, w, h, dxt, nrandom);
 			break;
+		case SRGB_MIXED:
+			s2tc_encode_block<color_dist_srgb_mixed>(out, rgba, iw, w, h, dxt, nrandom);
+			break;
 		case LAB:
 			s2tc_encode_block<color_dist_lab_srgb>(out, rgba, iw, w, h, dxt, nrandom);
 			break;
@@ -1013,7 +1049,7 @@ int usage(const char *me)
 			"    [-o outfile.dds]\n"
 			"    [-t {DXT1|DXT3|DXT5}]\n"
 			"    [-r randomcount]\n"
-			"    [-c {RGB|YUV|SRGB|LAB|AVG|NORMALMAP}]\n",
+			"    [-c {RGB|YUV|SRGB|SRGB_MIXED|LAB|AVG|NORMALMAP}]\n",
 			me);
 	return 1;
 }
@@ -1062,6 +1098,8 @@ int main(int argc, char **argv)
 					cd = YUV;
 				else if(!strcasecmp(optarg, "SRGB"))
 					cd = SRGB;
+				else if(!strcasecmp(optarg, "SRGB_MIXED"))
+					cd = SRGB_MIXED;
 				else if(!strcasecmp(optarg, "LAB"))
 					cd = LAB;
 				else if(!strcasecmp(optarg, "AVG"))
