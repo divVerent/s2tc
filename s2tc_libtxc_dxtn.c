@@ -8,28 +8,60 @@ void fetch_2d_texel_rgb_dxt1(GLint srcRowStride, const GLubyte *pixdata,
 			     GLint i, GLint j, GLvoid *texel)
 {
 	// fetches a single texel (i,j) into pixdata (RGB)
-	// TODO
+	GLubyte *t = texel;
+	const GLubyte *blksrc = (pixdata + ((srcRowStride + 3) / 4 * (j / 4) + (i / 4)) * 8);
+	unsigned int c = blksrc[i] + 256*blksrc[i+1] + 65536*blksrc[i+2] + 16777216*blksrc[i+3];
+	t[0] = (((c >> 11) & 0x1F) + ((c >> 27) & 0x1F)) * (0.5f / 31.0f * 255.0f);
+	t[1] = (((c >>  5) & 0x3F) + ((c >> 21) & 0x3F)) * (0.5f / 63.0f * 255.0f);
+	t[2] = (((c      ) & 0x1F) + ((c >> 16) & 0x1F)) * (0.5f / 31.0f * 255.0f);
 }
 
 void fetch_2d_texel_rgba_dxt1(GLint srcRowStride, const GLubyte *pixdata,
 			     GLint i, GLint j, GLvoid *texel)
 {
 	// fetches a single texel (i,j) into pixdata (RGBA)
-	// TODO
+	GLubyte *t = texel;
+	const GLubyte *blksrc = (pixdata + ((srcRowStride + 3) / 4 * (j / 4) + (i / 4)) * 8);
+	unsigned int c = blksrc[i] + 256*blksrc[i+1] + 65536*blksrc[i+2] + 16777216*blksrc[i+3];
+	t[0] = (((c >> 11) & 0x1F) + ((c >> 27) & 0x1F)) * (0.5f / 31.0f * 255.0f);
+	t[1] = (((c >>  5) & 0x3F) + ((c >> 21) & 0x3F)) * (0.5f / 63.0f * 255.0f);
+	t[2] = (((c      ) & 0x1F) + ((c >> 16) & 0x1F)) * (0.5f / 31.0f * 255.0f);
+	t[3] = 255;
 }
 
 void fetch_2d_texel_rgba_dxt3(GLint srcRowStride, const GLubyte *pixdata,
 			     GLint i, GLint j, GLvoid *texel)
 {
 	// fetches a single texel (i,j) into pixdata (RGBA)
-	// TODO
+	GLubyte *t = texel;
+	const GLubyte *blksrc = (pixdata + ((srcRowStride + 3) / 4 * (j / 4) + (i / 4)) * 16) + 8;
+	unsigned int c = blksrc[i] + 256*blksrc[i+1] + 65536*blksrc[i+2] + 16777216*blksrc[i+3];
+	t[0] = (((c >> 11) & 0x1F) + ((c >> 27) & 0x1F)) * (0.5f / 31.0f * 255.0f);
+	t[1] = (((c >>  5) & 0x3F) + ((c >> 21) & 0x3F)) * (0.5f / 63.0f * 255.0f);
+	t[2] = (((c      ) & 0x1F) + ((c >> 16) & 0x1F)) * (0.5f / 31.0f * 255.0f);
+	t[3] = (
+			  (blksrc[i-8] & 0x0F)
+			+ (blksrc[i-8] >> 4)
+			+ (blksrc[i-7] & 0x0F)
+			+ (blksrc[i-7] >> 4)
+			+ (blksrc[i-6] & 0x0F)
+			+ (blksrc[i-6] >> 4)
+			+ (blksrc[i-5] & 0x0F)
+			+ (blksrc[i-5] >> 4)
+	       ) * (0.125f / 15.0f * 255.0f);
 }
 
 void fetch_2d_texel_rgba_dxt5(GLint srcRowStride, const GLubyte *pixdata,
 			     GLint i, GLint j, GLvoid *texel)
 {
 	// fetches a single texel (i,j) into pixdata (RGBA)
-	// TODO
+	GLubyte *t = texel;
+	const GLubyte *blksrc = (pixdata + ((srcRowStride + 3) / 4 * (j / 4) + (i / 4)) * 16) + 8;
+	unsigned int c = blksrc[i] + 256*blksrc[i+1] + 65536*blksrc[i+2] + 16777216*blksrc[i+3];
+	t[0] = (((c >> 11) & 0x1F) + ((c >> 27) & 0x1F)) * (0.5f / 31.0f * 255.0f);
+	t[1] = (((c >>  5) & 0x3F) + ((c >> 21) & 0x3F)) * (0.5f / 63.0f * 255.0f);
+	t[2] = (((c      ) & 0x1F) + ((c >> 16) & 0x1F)) * (0.5f / 31.0f * 255.0f);
+	t[3] = (0.5 * blksrc[i-8] + 0.5 * blksrc[i-7]);
 }
 
 void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
