@@ -518,7 +518,7 @@ inline int color_dist_avg(const color_t &a, const color_t &b)
 	return ((dr*dr) << 2) + dg*dg + ((db*db) << 2);
 }
 
-inline int color_dist_rgb(const color_t &a, const color_t &b)
+inline int color_dist_yuv(const color_t &a, const color_t &b)
 {
 	int dr = a.r - b.r; // multiplier: 31 (-1..1)
 	int dg = a.g - b.g; // multiplier: 63 (-1..1)
@@ -529,14 +529,25 @@ inline int color_dist_rgb(const color_t &a, const color_t &b)
 	return ((y*y) << 1) + SHRR(u*u, 3) + SHRR(v*v, 5);
 }
 
+inline int color_dist_rgb(const color_t &a, const color_t &b)
+{
+	int dr = a.r - b.r; // multiplier: 31 (-1..1)
+	int dg = a.g - b.g; // multiplier: 63 (-1..1)
+	int db = a.b - b.b; // multiplier: 31 (-1..1)
+	int y = dr * 21*2 + dg * 72 + db * 7*2; // multiplier: 6272
+	int u = dr * 202 - y; // * 0.5 / (1 - 0.21)
+	int v = db * 202 - y; // * 0.5 / (1 - 0.07)
+	return ((y*y) << 1) + SHRR(u*u, 3) + SHRR(v*v, 5);
+}
+
 inline int color_dist_srgb(const color_t &a, const color_t &b)
 {
 	int dr = a.r * (int) a.r - b.r * (int) b.r; // multiplier: 31*31
 	int dg = a.g * (int) a.g - b.g * (int) b.g; // multiplier: 63*63
 	int db = a.b * (int) a.b - b.b * (int) b.b; // multiplier: 31*31
-	int y = dr * 30*2*2 + dg * 59 + db * 11*2*2; // multiplier: 391775
-	int u = dr * 408 - y; // * 0.5 / (1 - 0.30)
-	int v = db * 408 - y; // * 0.5 / (1 - 0.11)
+	int y = dr * 21*2*2 + dg * 72 + db * 7*2*2; // multiplier: 393400
+	int u = dr * 409 - y; // * 0.5 / (1 - 0.30)
+	int v = db * 409 - y; // * 0.5 / (1 - 0.11)
 	int sy = SHRR(y, 3) * SHRR(y, 4);
 	int su = SHRR(u, 3) * SHRR(u, 4);
 	int sv = SHRR(v, 3) * SHRR(v, 4);
@@ -725,6 +736,7 @@ enum DxtMode
 enum ColorDistMode
 {
 	RGB,
+	YUV,
 	SRGB,
 	AVG,
 	NORMALMAP
@@ -922,6 +934,9 @@ void s2tc_encode_block(unsigned char *out, const unsigned char *rgba, int iw, in
 		case RGB:
 			s2tc_encode_block<color_dist_rgb>(out, rgba, iw, w, h, dxt, nrandom);
 			break;
+		case YUV:
+			s2tc_encode_block<color_dist_yuv>(out, rgba, iw, w, h, dxt, nrandom);
+			break;
 		case SRGB:
 			s2tc_encode_block<color_dist_srgb>(out, rgba, iw, w, h, dxt, nrandom);
 			break;
@@ -957,7 +972,7 @@ int usage(const char *me)
 			"    [-o outfile.dds]\n"
 			"    [-t {DXT1|DXT3|DXT5}]\n"
 			"    [-r randomcount]\n"
-			"    [-c {RGB|SRGB|AVG|NORMALMAP}]\n",
+			"    [-c {RGB|YUV|SRGB|AVG|NORMALMAP}]\n",
 			me);
 	return 1;
 }
@@ -1002,6 +1017,8 @@ int main(int argc, char **argv)
 			case 'c':
 				if(!strcasecmp(optarg, "RGB"))
 					cd = RGB;
+				else if(!strcasecmp(optarg, "YUV"))
+					cd = YUV;
 				else if(!strcasecmp(optarg, "SRGB"))
 					cd = SRGB;
 				else if(!strcasecmp(optarg, "AVG"))
