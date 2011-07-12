@@ -87,7 +87,7 @@ t()
 {
 	in=$1; shift
 	out=$1; shift
-	[ -f "$out" ] || time "$@" < "$in" > "$out"
+	time "$@" < "$in" > "$out"
 	html "$out"
 }
 
