@@ -92,7 +92,7 @@ t()
 }
 
 html_start
-for i in dxtfail base_concrete1a disabled floor_tile3a lift02 panel_ceil1a sunset amelia rms noise noise_solid supernova; do
+for i in dxtfail base_concrete1a disabled floor_tile3a lift02 panel_ceil1a sunset amelia rms noise noise_solid supernova ishihara; do
 	html_rowstart "$i"
 
 	html "$i".tga
