@@ -53,7 +53,7 @@ EOF
 	echo >&3 "<tr><th>Picture</th>"
 	echo >&3 "<th>Original</th>"
 	echo >&3 "<th>nvcompress</th>"
-	echo >&3 "<th>rand64-sRGB</th>"
+t 	echo >&3 "<th>rand64-sRGB</th>"
 #	echo >&3 "<th>norand-sRGB</th>"
 	echo >&3 "<th>rand64-sRGB-mixed</th>"
 #	echo >&3 "<th>norand-sRGB-mixed</th>"
@@ -92,7 +92,7 @@ t()
 }
 
 html_start
-for i in dxtfail base_concrete1a disabled floor_tile3a lift02 panel_ceil1a sunset amelia rms; do
+for i in dxtfail base_concrete1a disabled floor_tile3a lift02 panel_ceil1a sunset amelia rms noise noise_solid supernova; do
 	html_rowstart "$i"
 
 	html "$i".tga
