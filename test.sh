@@ -3,7 +3,7 @@
 set -ex
 
 CXX="g++ -Wall -Wextra -O3"
-$CXX s2tc.cpp -o s2tc
+make clean all
 
 mkdir -p html
 exec 3>html/index.html
