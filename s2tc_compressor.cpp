@@ -550,5 +550,11 @@ void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h, i
 			for(x = 0; x < w; ++x)
 				out[(x + y * w) * 4 + 3] = diffuse(&diffuse_a, rgba[(x + y * w) * srccomps + 3] * (alpharange / 255.0));
 	}
+	else
+	{
+		for(y = 0; y < h; ++y)
+			for(x = 0; x < w; ++x)
+				out[(x + y * w) * 4 + 3] = alpharange;
+	}
 }
 
