@@ -579,10 +579,10 @@ inline int color_dist_srgb_mixed(const color_t &a, const color_t &b)
 	int ay = srgb_get_y(a);
 	int by = srgb_get_y(b);
 	// get UV
-	int au = a.r * 20 - ay;
-	int av = a.b * 20 - ay;
-	int bu = b.r * 20 - by;
-	int bv = b.b * 20 - by;
+	int au = a.r * 191 - ay;
+	int av = a.b * 191 - ay;
+	int bu = b.r * 191 - by;
+	int bv = b.b * 191 - by;
 	// get differences
 	int y = ay - by;
 	int u = au - bu;

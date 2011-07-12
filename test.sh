@@ -10,7 +10,45 @@ exec 3>html/index.html
 
 html_start()
 {
-	echo >&3 "<html><title>S2TC</title><body><h1>S2TC</h1>"
+	echo >&3 "<html><title>S2TC</title>"
+	cat <<'EOF' >&3
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.6.2.min.js"></script>
+<script type="text/javascript">
+var refsrc = "";
+function clickfunc()
+{
+	var me = $(this);
+	if(!me.data("src"))
+		me.data("src", me.attr("src"));
+	me.attr("src", me.data("src"));
+	if(refsrc == me.data("src"))
+		refsrc = "";
+	else
+		refsrc = me.data("src");
+}
+function enterfunc()
+{
+	var me = $(this);
+	if(!me.data("src"))
+		me.data("src", me.attr("src"));
+	if(refsrc != "")
+		me.attr("src", refsrc);
+}
+function leavefunc()
+{
+	var me = $(this);
+	if(me.data("src"))
+		me.attr("src", me.data("src"));
+}
+function run()
+{
+	$('img').click(clickfunc);
+	$('img').mouseenter(enterfunc);
+	$('img').mouseleave(leavefunc);
+}
+</script>
+EOF
+	echo >&3 "<body onLoad=\"run()\"><h1>S2TC</h1>"
 	echo >&3 "<table>"
 	echo >&3 "<tr><th>Picture</th>"
 	echo >&3 "<th>Original</th>"
@@ -33,7 +71,7 @@ html_rowstart()
 }
 html()
 {
-	convert "$1" -crop 256x256+128+128 "html/$1.png"
+	convert "$1" -crop 256x256+192+128 "html/$1.png"
 	echo >&3 "<td><img src=\"$1.png\" alt=\"$1\"></td>"
 }
 html_rowend()
@@ -54,7 +92,7 @@ t()
 }
 
 html_start
-for i in amelia dxtfail base_concrete1a disabled floor_tile3a lift02 panel_ceil1a sunset rms; do
+for i in dxtfail base_concrete1a disabled floor_tile3a lift02 panel_ceil1a sunset amelia rms; do
 	html_rowstart "$i"
 
 	html "$i".tga
