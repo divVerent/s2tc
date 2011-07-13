@@ -428,7 +428,7 @@ namespace
 		int nc0 = 0, na0 = 0, sc0r = 0, sc0g = 0, sc0b = 0, sa0 = 0;
 		int nc1 = 0, na1 = 0, sc1r = 0, sc1g = 0, sc1b = 0, sa1 = 0;
 
-		memset(out, 0, 16);
+		memset(out, 0, (dxt == DXT1) ? 8 : 16);
 		for(x = 0; x < w; ++x)
 			for(y = 0; y < h; ++y)
 			{
