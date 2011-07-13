@@ -570,21 +570,21 @@ namespace
 			if(dxt == DXT5)
 			{
 				if(na0)
-					ca[0] = sa0 / na0;
+					ca[0] = (2 * sa0 + na0) / (2 * na0);
 				if(na1)
-					ca[1] = sa1 / na1;
+					ca[1] = (2 * sa1 + na1) / (2 * na1);
 			}
 			if(nc0)
 			{
-				c[0].r = sc0r / nc0;
-				c[0].g = sc0g / nc0;
-				c[0].b = sc0b / nc0;
+				c[0].r = (2 * sc0r + nc0) / (2 * nc0);
+				c[0].g = (2 * sc0g + nc0) / (2 * nc0);
+				c[0].b = (2 * sc0b + nc0) / (2 * nc0);
 			}
 			if(nc1)
 			{
-				c[1].r = sc1r / nc1;
-				c[1].g = sc1g / nc1;
-				c[1].b = sc1b / nc1;
+				c[1].r = (2 * sc1r + nc1) / (2 * nc1);
+				c[1].g = (2 * sc1g + nc1) / (2 * nc1);
+				c[1].b = (2 * sc1b + nc1) / (2 * nc1);
 			}
 
 			if(dxt == DXT5)
