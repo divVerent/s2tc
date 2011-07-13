@@ -60,9 +60,6 @@ EOF
 	echo >&3 "<th>rand64-wavg</th>"
 	echo >&3 "<th>norand-wavg</th>"
 	echo >&3 "<th>faster-wavg</th>"
-	echo >&3 "<th>rand64-avg</th>"
-	echo >&3 "<th>norand-avg</th>"
-	echo >&3 "<th>faster-avg</th>"
 	echo >&3 "</tr>"
 }
 html_rowstart()
