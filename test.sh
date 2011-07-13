@@ -60,6 +60,7 @@ EOF
 	echo >&3 "<th>rand64-wavg</th>"
 	echo >&3 "<th>norand-wavg</th>"
 	echo >&3 "<th>faster-wavg</th>"
+	echo >&3 "<th>norand-avg</th>"
 	echo >&3 "</tr>"
 }
 html_rowstart()
@@ -109,6 +110,7 @@ for i in dxtfail base_concrete1a disabled floor_tile3a lift02 panel_ceil1a sunse
 	S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=64 t "$i".tga "$i"-rand64-wavg.dds ./s2tc
 	S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=0  t "$i".tga "$i"-norand-wavg.dds ./s2tc
 	S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=-1 t "$i".tga "$i"-faster-wavg.dds ./s2tc
+	S2TC_COLORDIST_MODE=AVG        S2TC_RANDOM_COLORS=-1 t "$i".tga "$i"-norand-avg.dds  ./s2tc
 
 	html_rowend
 done
