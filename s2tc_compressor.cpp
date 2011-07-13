@@ -715,10 +715,12 @@ namespace
 {
 	inline int diffuse(int *diff, int src, int shift)
 	{
-		int mask = (1 << shift) - 1;
+		int maxval = (1 << (8 - shift)) - 1;
 		src += *diff;
-		int ret = min(src >> shift, (1 << (8 - shift)) - 1);
-		*diff = src & mask;
+		int ret = max(0, min(src >> shift, maxval));
+		// simulate decoding ("loop filter")
+		int loop = (ret << shift) | (ret >> (8 - 2 * shift));
+		*diff = loop - ret;
 		return ret;
 	}
 };
