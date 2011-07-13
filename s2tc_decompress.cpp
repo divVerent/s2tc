@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <algorithm>
 #include "libtxc_dxtn.h"
 
 uint32_t LittleLong(uint32_t w)
@@ -60,7 +61,7 @@ int main()
 	fwrite(t, 18, 1, stdout);
 
 	int n = ((width + 3) / 4) * ((height + 3) / 4);
-	unsigned char *buf = malloc(n * blocksize);
+	unsigned char *buf = (unsigned char *) malloc(n * blocksize);
 	fread(buf, blocksize, n, stdin);
 
 	int x, y;
@@ -69,6 +70,7 @@ int main()
 		{
 			char data[4];
 			fetch(width, buf, x, y, &data);
+			std::swap(data[0], data[2]);
 			fwrite(data, 4, 1, stdout);
 		}
 	return 0;

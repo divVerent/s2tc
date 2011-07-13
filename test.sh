@@ -53,6 +53,7 @@ EOF
 	echo >&3 "<tr><th>Picture</th>"
 	echo >&3 "<th>Original</th>"
 	echo >&3 "<th>nvcompress</th>"
+	echo >&3 "<th>nvcompress (S2TC)</th>"
 	echo >&3 "<th>rand64-sRGB-mixed</th>"
 	echo >&3 "<th>norand-sRGB-mixed</th>"
 	echo >&3 "<th>faster-sRGB-mixed</th>"
@@ -71,6 +72,11 @@ html_rowstart()
 html()
 {
 	convert "$1" -crop 256x256+192+128 "html/$1.png"
+	echo >&3 "<td><img src=\"$1.png\" alt=\"$1\"></td>"
+}
+html2()
+{
+	./s2tc_decompress < "$1" | convert TGA:- -crop 256x256+192+128 "html/$1-s2tc.png"
 	echo >&3 "<td><img src=\"$1.png\" alt=\"$1\"></td>"
 }
 html_rowend()
@@ -98,6 +104,7 @@ for i in dxtfail base_concrete1a disabled floor_tile3a lift02 panel_ceil1a sunse
 
 	nvcompress "$i".tga "$i".dds
 	html "$i".dds
+	html2 "$i".dds
 
 	t "$i".tga "$i"-rand64-mrgb.dds ./s2tc -c SRGB_MIXED -r 64
 	t "$i".tga "$i"-norand-mrgb.dds ./s2tc -c SRGB_MIXED -r 0
