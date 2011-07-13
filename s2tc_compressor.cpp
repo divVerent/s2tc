@@ -400,6 +400,15 @@ namespace
 					++m;
 				}
 			}
+			else
+			{
+				// hack for last miplevel
+				if(n == 1)
+				{
+					c[1] = c[0];
+					m = n = 2;
+				}
+			}
 
 			reduce_colors_inplace(c, n, m, ColorDist);
 			if(dxt == DXT5)
