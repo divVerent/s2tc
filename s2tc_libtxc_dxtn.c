@@ -1,8 +1,7 @@
-#include "s2tc_compressor.h"
-
-#include <GL/gl.h>
+#include "libtxc_dxtn.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include "s2tc_compressor.h"
 
 void fetch_2d_texel_rgb_dxt1(GLint srcRowStride, const GLubyte *pixdata,
 			     GLint i, GLint j, GLvoid *texel)
@@ -20,9 +19,9 @@ void fetch_2d_texel_rgb_dxt1(GLint srcRowStride, const GLubyte *pixdata,
 		case 3:  if(c1 > c) { c = 0;    break; }
 		default: if(rand() & 1) c = c1; break;
 	}
-	t[0] = ((c >> 11) & 0x1F) << 3;
+	t[2] = ((c >> 11) & 0x1F) << 3;
 	t[1] = ((c >>  5) & 0x3F) << 2;
-	t[2] = ((c      ) & 0x1F) << 3;
+	t[0] = ((c      ) & 0x1F) << 3;
 }
 
 void fetch_2d_texel_rgba_dxt1(GLint srcRowStride, const GLubyte *pixdata,
@@ -41,9 +40,9 @@ void fetch_2d_texel_rgba_dxt1(GLint srcRowStride, const GLubyte *pixdata,
 		case 3:  if(c1 > c) { c = 0;    t[3] =   0; break; }
 		default: if(rand() & 1) c = c1; t[3] = 255; break;
 	}
-	t[0] = ((c >> 11) & 0x1F) << 3;
+	t[2] = ((c >> 11) & 0x1F) << 3;
 	t[1] = ((c >>  5) & 0x3F) << 2;
-	t[2] = ((c      ) & 0x1F) << 3;
+	t[0] = ((c      ) & 0x1F) << 3;
 }
 
 void fetch_2d_texel_rgba_dxt3(GLint srcRowStride, const GLubyte *pixdata,

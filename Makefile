@@ -11,6 +11,9 @@ include $(wildcard *.d)
 s2tc: s2tc.o s2tc_compressor.o
 	$(CXX) $(LDFLAGS) -o $@ $+
 
+s2tc_decompress: s2tc_decompress.o s2tc_libtxc_dxtn.o s2tc_compressor.o
+	$(CXX) $(LDFLAGS) -o $@ $+
+
 libtxc_dxtn.so: s2tc_libtxc_dxtn.o s2tc_compressor.o
 	$(CXX) $(LDFLAGS) -shared -o $@ $+
 
