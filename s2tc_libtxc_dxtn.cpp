@@ -20,9 +20,9 @@ void fetch_2d_texel_rgb_dxt1(GLint srcRowStride, const GLubyte *pixdata,
 		case 3:  if(c1 > c) { c = 0;    break; }
 		default: if(rand() & 1) c = c1; break;
 	}
-	t[2] = ((c >> 11) & 0x1F); t[2] = (t[2] << 3) | (t[2] >> 2);
+	t[0] = ((c >> 11) & 0x1F); t[0] = (t[0] << 3) | (t[0] >> 2);
 	t[1] = ((c >>  5) & 0x3F); t[1] = (t[1] << 2) | (t[1] >> 4);
-	t[0] = ((c      ) & 0x1F); t[0] = (t[0] << 3) | (t[0] >> 2);
+	t[2] = ((c      ) & 0x1F); t[2] = (t[2] << 3) | (t[2] >> 2);
 }
 
 void fetch_2d_texel_rgba_dxt1(GLint srcRowStride, const GLubyte *pixdata,
@@ -41,9 +41,9 @@ void fetch_2d_texel_rgba_dxt1(GLint srcRowStride, const GLubyte *pixdata,
 		case 3:  if(c1 > c) { c = 0;    t[3] =   0; break; }
 		default: if(rand() & 1) c = c1; t[3] = 255; break;
 	}
-	t[2] = ((c >> 11) & 0x1F); t[2] = (t[2] << 3) | (t[2] >> 2);
+	t[0] = ((c >> 11) & 0x1F); t[0] = (t[0] << 3) | (t[0] >> 2);
 	t[1] = ((c >>  5) & 0x3F); t[1] = (t[1] << 2) | (t[1] >> 4);
-	t[0] = ((c      ) & 0x1F); t[0] = (t[0] << 3) | (t[0] >> 2);
+	t[2] = ((c      ) & 0x1F); t[2] = (t[2] << 3) | (t[2] >> 2);
 }
 
 void fetch_2d_texel_rgba_dxt3(GLint srcRowStride, const GLubyte *pixdata,
@@ -61,9 +61,9 @@ void fetch_2d_texel_rgba_dxt3(GLint srcRowStride, const GLubyte *pixdata,
 		case 1:  c = c1;                break;
 		default: if(rand() & 1) c = c1; break;
 	}
-	t[2] = ((c >> 11) & 0x1F); t[2] = (t[2] << 3) | (t[2] >> 2);
+	t[0] = ((c >> 11) & 0x1F); t[0] = (t[0] << 3) | (t[0] >> 2);
 	t[1] = ((c >>  5) & 0x3F); t[1] = (t[1] << 2) | (t[1] >> 4);
-	t[0] = ((c      ) & 0x1F); t[0] = (t[0] << 3) | (t[0] >> 2);
+	t[2] = ((c      ) & 0x1F); t[2] = (t[2] << 3) | (t[2] >> 2);
 	int a = (blksrc[(j % 4) * 2 + (i % 4) / 2] >> (4 * (i % 4) % 2)) & 0x0F;
 	t[3] = a | (a << 4);
 }
@@ -83,9 +83,9 @@ void fetch_2d_texel_rgba_dxt5(GLint srcRowStride, const GLubyte *pixdata,
 		case 1:  c = c1;                break;
 		default: if(rand() & 1) c = c1; break;
 	}
-	t[2] = ((c >> 11) & 0x1F); t[2] = (t[2] << 3) | (t[2] >> 2);
+	t[0] = ((c >> 11) & 0x1F); t[0] = (t[0] << 3) | (t[0] >> 2);
 	t[1] = ((c >>  5) & 0x3F); t[1] = (t[1] << 2) | (t[1] >> 4);
-	t[0] = ((c      ) & 0x1F); t[0] = (t[0] << 3) | (t[0] >> 2);
+	t[2] = ((c      ) & 0x1F); t[2] = (t[2] << 3) | (t[2] >> 2);
 
 	unsigned int a  = blksrc[0];
 	unsigned int a1 = blksrc[1];
