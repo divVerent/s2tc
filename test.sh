@@ -77,7 +77,7 @@ html()
 html2()
 {
 	./s2tc_decompress < "$1" | convert TGA:- -crop 256x256+192+128 "html/$1-s2tc.png"
-	echo >&3 "<td><img src=\"$1.png\" alt=\"$1\"></td>"
+	echo >&3 "<td><img src=\"$1-s2tc.png\" alt=\"$1\"></td>"
 }
 html_rowend()
 {
