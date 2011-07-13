@@ -144,7 +144,7 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 				for (i = 0; i < width; i += 4) {
 					if (width > i + 3) numxpixels = 4;
 					else numxpixels = width - i;
-					s2tc_encode_block(blkaddr, srcaddr, width, numxpixels, numypixels, DXT5, SRGB_MIXED, 0);
+					s2tc_encode_block(blkaddr, srcaddr, width, numxpixels, numypixels, DXT5, SRGB_WAVG, -1);
 					srcaddr += 4 * numxpixels;
 					blkaddr += 16;
 				}
