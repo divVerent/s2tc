@@ -109,9 +109,6 @@ for i in dxtfail base_concrete1a disabled floor_tile3a lift02 panel_ceil1a sunse
 	t "$i".tga "$i"-rand64-wavg.dds ./s2tc -c WAVG       -r 64
 	t "$i".tga "$i"-norand-wavg.dds ./s2tc -c WAVG       -r 0
 	t "$i".tga "$i"-faster-wavg.dds ./s2tc -c WAVG       -r -1
-	t "$i".tga "$i"-rand64-avg.dds  ./s2tc -c AVG        -r 64
-	t "$i".tga "$i"-norand-avg.dds  ./s2tc -c AVG        -r 0
-	t "$i".tga "$i"-faster-avg.dds  ./s2tc -c AVG        -r -1
 
 	html_rowend
 done
