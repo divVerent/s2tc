@@ -720,7 +720,7 @@ namespace
 		int ret = max(0, min(src >> shift, maxval));
 		// simulate decoding ("loop filter")
 		int loop = (ret << shift) | (ret >> (8 - 2 * shift));
-		*diff = loop - ret;
+		*diff = src - loop;
 		return ret;
 	}
 };
