@@ -506,7 +506,7 @@ int main(int argc, char **argv)
 	unsigned char *pic, *picdata;
 	int piclen;
 	const char *fourcc;
-	int blocksize, alpharange;
+	int blocksize, alphabits;
 	DxtMode dxt = DXT1;
 	ColorDistMode cd = RGB;
 	int nrandom = 0;
@@ -587,18 +587,18 @@ int main(int argc, char **argv)
 	{
 		case DXT1:
 			blocksize = 8;
-			alpharange = 1;
+			alphabits = 1;
 			fourcc = "DXT1";
 			break;
 		case DXT3:
 			blocksize = 16;
-			alpharange = 15;
+			alphabits = 4;
 			fourcc = "DXT3";
 			break;
 		default:
 		case DXT5:
 			blocksize = 16;
-			alpharange = 255;
+			alphabits = 8;
 			fourcc = "DXT5";
 			break;
 	}
@@ -659,7 +659,7 @@ int main(int argc, char **argv)
 	unsigned char *opic = (unsigned char *) malloc(image_width * image_height * 4);
 	for(;;)
 	{
-		rgb565_image(opic, pic, image_width, image_height, 4, 1, alpharange);
+		rgb565_image(opic, pic, image_width, image_height, 4, 1, alphabits);
 		for(y = 0; y < image_height; y += 4)
 			for(x = 0; x < image_width; x += 4)
 			{

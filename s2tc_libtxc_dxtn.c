@@ -83,10 +83,10 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 			rgb565_image(rgba, srcPixData, width, height, srccomps, 0, 1);
 			break;
 		case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
-			rgb565_image(rgba, srcPixData, width, height, srccomps, 0, 15);
+			rgb565_image(rgba, srcPixData, width, height, srccomps, 0, 4);
 			break;
 		case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
-			rgb565_image(rgba, srcPixData, width, height, srccomps, 0, 255);
+			rgb565_image(rgba, srcPixData, width, height, srccomps, 0, 8);
 			break;
 		default:
 			free(rgba);
@@ -144,7 +144,7 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 				for (i = 0; i < width; i += 4) {
 					if (width > i + 3) numxpixels = 4;
 					else numxpixels = width - i;
-					s2tc_encode_block(blkaddr, srcaddr, width, numxpixels, numypixels, DXT5, SRGB_WAVG, -1);
+					s2tc_encode_block(blkaddr, srcaddr, width, numxpixels, numypixels, DXT5, WAVG, -1);
 					srcaddr += 4 * numxpixels;
 					blkaddr += 16;
 				}

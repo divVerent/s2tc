@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h, int srccomps, int bgr, int alpharange);
+void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h, int srccomps, int bgr, int alphabits);
 
 typedef enum
 {

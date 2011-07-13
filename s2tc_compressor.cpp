@@ -304,7 +304,8 @@ namespace
 	{
 		MODE_NORMAL,
 		MODE_RANDOM,
-		MODE_FAST
+		MODE_FAST,
+		MODE_SUPERFAST
 	};
 
 	template<DxtMode dxt, ColorDistFunc ColorDist, CompressionMode mode>
@@ -316,7 +317,7 @@ namespace
 		int n = 0, m = 0;
 		int x, y;
 
-		if(mode == MODE_FAST)
+		if(mode == MODE_FAST || mode == MODE_SUPERFAST)
 		{
 			color_t c0 = {0, 0, 0};
 
@@ -405,41 +406,29 @@ namespace
 				reduce_colors_inplace_2fixpoints(ca, n, n, alpha_dist, (unsigned char) 0, (unsigned char) 255);
 		}
 
-		if(dxt == DXT5)
+		if(mode != MODE_FAST)
 		{
-			if(ca[1] < ca[0])
+			if(dxt == DXT5)
 			{
-				ca[2] = ca[0];
-				ca[0] = ca[1];
-				ca[1] = ca[2];
+				if(ca[1] < ca[0])
+				{
+					ca[2] = ca[0];
+					ca[0] = ca[1];
+					ca[1] = ca[2];
+				}
+			}
+			if(c[1] < c[0])
+			{
+				c[2] = c[0];
+				c[0] = c[1];
+				c[1] = c[2];
 			}
 		}
-		if(c[1] < c[0])
-		{
-			c[2] = c[0];
-			c[0] = c[1];
-			c[1] = c[2];
-		}
+
+		int nc0 = 0, na0 = 0, sc0r = 0, sc0g = 0, sc0b = 0, sa0 = 0;
+		int nc1 = 0, na1 = 0, sc1r = 0, sc1g = 0, sc1b = 0, sa1 = 0;
 
 		memset(out, 0, 16);
-		switch(dxt)
-		{
-			case DXT5:
-				out[0] = ca[0];
-				out[1] = ca[1];
-			case DXT3:
-				out[8] = ((c[0].g & 0x07) << 5) | c[0].b;
-				out[9] = (c[0].r << 3) | (c[0].g >> 3);
-				out[10] = ((c[1].g & 0x07) << 5) | c[1].b;
-				out[11] = (c[1].r << 3) | (c[1].g >> 3);
-				break;
-			case DXT1:
-				out[0] = ((c[0].g & 0x07) << 5) | c[0].b;
-				out[1] = (c[0].r << 3) | (c[0].g >> 3);
-				out[2] = ((c[1].g & 0x07) << 5) | c[1].b;
-				out[3] = (c[1].r << 3) | (c[1].g >> 3);
-				break;
-		}
 		for(x = 0; x < w; ++x)
 			for(y = 0; y < h; ++y)
 			{
@@ -478,17 +467,44 @@ namespace
 							else if(da[0] <= da[1])
 							{
 								// 0
+								if(mode == MODE_FAST)
+								{
+									++na0;
+									sa0 += ca[2];
+								}
 							}
 							else
 							{
 								// 1
 								out[bitindex / 8 + 2] |= (1 << (bitindex % 8));
+								if(mode == MODE_FAST)
+								{
+									++na1;
+									sa1 += ca[2];
+								}
 							}
 						}
 						if(ColorDist(c[0], c[2]) > ColorDist(c[1], c[2]))
 						{
 							int bitindex = pindex * 2;
 							out[bitindex / 8 + 12] |= (1 << (bitindex % 8));
+							if(mode == MODE_FAST)
+							{
+								++nc1;
+								sc1r += c[2].r;
+								sc1g += c[2].g;
+								sc1b += c[2].b;
+							}
+						}
+						else
+						{
+							if(mode == MODE_FAST)
+							{
+								++nc0;
+								sc0r += c[2].r;
+								sc0g += c[2].g;
+								sc0b += c[2].b;
+							}
 						}
 						break;
 					case DXT3:
@@ -500,6 +516,23 @@ namespace
 						{
 							int bitindex = pindex * 2;
 							out[bitindex / 8 + 12] |= (1 << (bitindex % 8));
+							if(mode == MODE_FAST)
+							{
+								++nc1;
+								sc1r += c[2].r;
+								sc1g += c[2].g;
+								sc1b += c[2].b;
+							}
+						}
+						else
+						{
+							if(mode == MODE_FAST)
+							{
+								++nc0;
+								sc0r += c[2].r;
+								sc0g += c[2].g;
+								sc0b += c[2].b;
+							}
 						}
 						break;
 					case DXT1:
@@ -508,11 +541,109 @@ namespace
 							if(!ca[2])
 								out[bitindex / 8 + 4] |= (3 << (bitindex % 8));
 							else if(ColorDist(c[0], c[2]) > ColorDist(c[1], c[2]))
+							{
 								out[bitindex / 8 + 4] |= (1 << (bitindex % 8));
+								if(mode == MODE_FAST)
+								{
+									++nc1;
+									sc1r += c[2].r;
+									sc1g += c[2].g;
+									sc1b += c[2].b;
+								}
+							}
+							else
+							{
+								if(mode == MODE_FAST)
+								{
+									++nc0;
+									sc0r += c[2].r;
+									sc0g += c[2].g;
+									sc0b += c[2].b;
+								}
+							}
 						}
 						break;
 				}
 			}
+		if(mode == MODE_FAST)
+		{
+			if(dxt == DXT5)
+			{
+				if(na0)
+					ca[0] = sa0 / na0;
+				if(na1)
+					ca[1] = sa1 / na1;
+			}
+			if(nc0)
+			{
+				c[0].r = sc0r / nc0;
+				c[0].g = sc0g / nc0;
+				c[0].b = sc0b / nc0;
+			}
+			if(nc1)
+			{
+				c[1].r = sc1r / nc1;
+				c[1].g = sc1g / nc1;
+				c[1].b = sc1b / nc1;
+			}
+
+			if(dxt == DXT5)
+			{
+				if(ca[1] < ca[0])
+				{
+					ca[2] = ca[0];
+					ca[0] = ca[1];
+					ca[1] = ca[2];
+					// swap the alphas
+					for(int pindex = 0; pindex < 16; ++pindex)
+					{
+						int bitindex_set = pindex * 3;
+						int bitindex_test = bitindex_set + 3;
+						if(!(out[bitindex_test / 8] & (1 << (bitindex_test % 8))))
+							out[bitindex_set / 8] ^= (1 << (bitindex_set % 8));
+					}
+				}
+			}
+			if(c[1] < c[0])
+			{
+				c[2] = c[0];
+				c[0] = c[1];
+				c[1] = c[2];
+				// swap the colors
+				if(dxt == DXT1)
+				{
+					out[4] ^= 0x55 & ~(out[4] >> 1);
+					out[5] ^= 0x55 & ~(out[5] >> 1);
+					out[6] ^= 0x55 & ~(out[6] >> 1);
+					out[7] ^= 0x55 & ~(out[7] >> 1);
+				}
+				else
+				{
+					out[12] ^= 0x55 & ~(out[12] >> 1);
+					out[13] ^= 0x55 & ~(out[13] >> 1);
+					out[14] ^= 0x55 & ~(out[14] >> 1);
+					out[15] ^= 0x55 & ~(out[15] >> 1);
+				}
+			}
+		}
+		switch(dxt)
+		{
+			case DXT5:
+				out[0] = ca[0];
+				out[1] = ca[1];
+			case DXT3:
+				out[8] = ((c[0].g & 0x07) << 5) | c[0].b;
+				out[9] = (c[0].r << 3) | (c[0].g >> 3);
+				out[10] = ((c[1].g & 0x07) << 5) | c[1].b;
+				out[11] = (c[1].r << 3) | (c[1].g >> 3);
+				break;
+			case DXT1:
+				out[0] = ((c[0].g & 0x07) << 5) | c[0].b;
+				out[1] = (c[0].r << 3) | (c[0].g >> 3);
+				out[2] = ((c[1].g & 0x07) << 5) | c[1].b;
+				out[3] = (c[1].r << 3) | (c[1].g >> 3);
+				break;
+		}
 	}
 
 	// compile time dispatch magic
@@ -523,8 +654,10 @@ namespace
 			s2tc_encode_block<dxt, ColorDist, MODE_RANDOM>(out, rgba, iw, w, h, nrandom);
 		else if(nrandom == 0)
 			s2tc_encode_block<dxt, ColorDist, MODE_NORMAL>(out, rgba, iw, w, h, nrandom);
-		else // if(nrandom < 0)
+		else if(nrandom == -1)
 			s2tc_encode_block<dxt, ColorDist, MODE_FAST>(out, rgba, iw, w, h, nrandom);
+		else // if(nrandom < -1)
+			s2tc_encode_block<dxt, ColorDist, MODE_SUPERFAST>(out, rgba, iw, w, h, nrandom);
 	}
 
 	template<ColorDistFunc ColorDist>
@@ -579,31 +712,31 @@ void s2tc_encode_block(unsigned char *out, const unsigned char *rgba, int iw, in
 
 namespace
 {
-	inline int diffuse(float *diff, float src)
+	inline int diffuse(int *diff, int src, int shift)
 	{
-		int ret;
+		int mask = (1 << shift) - 1;
 		src += *diff;
-		ret = src;
-		*diff = (src - ret);
+		int ret = min(src >> shift, (1 << (8 - shift)) - 1);
+		*diff = src & mask;
 		return ret;
 	}
 };
 
-void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h, int srccomps, int bgr, int alpharange)
+void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h, int srccomps, int bgr, int alphabits)
 {
 	int x, y;
-	float diffuse_r = 0;
-	float diffuse_g = 0;
-	float diffuse_b = 0;
-	float diffuse_a = 0;
+	int diffuse_r = 0;
+	int diffuse_g = 0;
+	int diffuse_b = 0;
+	int diffuse_a = 0;
 	if(bgr)
 	{
 		for(y = 0; y < h; ++y)
 			for(x = 0; x < w; ++x)
 			{
-				out[(x + y * w) * 4 + 2] = diffuse(&diffuse_r, rgba[(x + y * w) * srccomps + 2] * 31.0 / 255.0);
-				out[(x + y * w) * 4 + 1] = diffuse(&diffuse_g, rgba[(x + y * w) * srccomps + 1] * 63.0 / 255.0);
-				out[(x + y * w) * 4 + 0] = diffuse(&diffuse_b, rgba[(x + y * w) * srccomps + 0] * 31.0 / 255.0);
+				out[(x + y * w) * 4 + 2] = diffuse(&diffuse_r, rgba[(x + y * w) * srccomps + 2], 3);
+				out[(x + y * w) * 4 + 1] = diffuse(&diffuse_g, rgba[(x + y * w) * srccomps + 1], 2);
+				out[(x + y * w) * 4 + 0] = diffuse(&diffuse_b, rgba[(x + y * w) * srccomps + 0], 3);
 			}
 	}
 	else
@@ -611,19 +744,21 @@ void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h, i
 		for(y = 0; y < h; ++y)
 			for(x = 0; x < w; ++x)
 			{
-				out[(x + y * w) * 4 + 2] = diffuse(&diffuse_r, rgba[(x + y * w) * srccomps + 0] * 31.0 / 255.0);
-				out[(x + y * w) * 4 + 1] = diffuse(&diffuse_g, rgba[(x + y * w) * srccomps + 1] * 63.0 / 255.0);
-				out[(x + y * w) * 4 + 0] = diffuse(&diffuse_b, rgba[(x + y * w) * srccomps + 2] * 31.0 / 255.0);
+				out[(x + y * w) * 4 + 2] = diffuse(&diffuse_r, rgba[(x + y * w) * srccomps + 0], 3);
+				out[(x + y * w) * 4 + 1] = diffuse(&diffuse_g, rgba[(x + y * w) * srccomps + 1], 2);
+				out[(x + y * w) * 4 + 0] = diffuse(&diffuse_b, rgba[(x + y * w) * srccomps + 2], 3);
 			}
 	}
 	if(srccomps == 4)
 	{
+		int alphadiffuse = 8 - alphabits;
 		for(y = 0; y < h; ++y)
 			for(x = 0; x < w; ++x)
-				out[(x + y * w) * 4 + 3] = diffuse(&diffuse_a, rgba[(x + y * w) * srccomps + 3] * (alpharange / 255.0));
+				out[(x + y * w) * 4 + 3] = diffuse(&diffuse_a, rgba[(x + y * w) * srccomps + 3], alphadiffuse);
 	}
 	else
 	{
+		int alpharange = (1 << alphabits) - 1;
 		for(y = 0; y < h; ++y)
 			for(x = 0; x < w; ++x)
 				out[(x + y * w) * 4 + 3] = alpharange;
