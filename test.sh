@@ -103,12 +103,12 @@ for i in dxtfail base_concrete1a disabled floor_tile3a lift02 panel_ceil1a sunse
 	html "$i".dds
 	html2 "$i".dds
 
-	t "$i".tga "$i"-rand64-mrgb.dds ./s2tc -c SRGB_MIXED -r 64
-	t "$i".tga "$i"-norand-mrgb.dds ./s2tc -c SRGB_MIXED -r 0
-	t "$i".tga "$i"-faster-mrgb.dds ./s2tc -c SRGB_MIXED -r -1
-	t "$i".tga "$i"-rand64-wavg.dds ./s2tc -c WAVG       -r 64
-	t "$i".tga "$i"-norand-wavg.dds ./s2tc -c WAVG       -r 0
-	t "$i".tga "$i"-faster-wavg.dds ./s2tc -c WAVG       -r -1
+	S2TC_COLORDIST_MODE=SRGB_MIXED S2TC_RANDOM_COLORS=64 t "$i".tga "$i"-rand64-mrgb.dds ./s2tc
+	S2TC_COLORDIST_MODE=SRGB_MIXED S2TC_RANDOM_COLORS=0  t "$i".tga "$i"-norand-mrgb.dds ./s2tc
+	S2TC_COLORDIST_MODE=SRGB_MIXED S2TC_RANDOM_COLORS=-1 t "$i".tga "$i"-faster-mrgb.dds ./s2tc
+	S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=64 t "$i".tga "$i"-rand64-wavg.dds ./s2tc
+	S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=0  t "$i".tga "$i"-norand-wavg.dds ./s2tc
+	S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=-1 t "$i".tga "$i"-faster-wavg.dds ./s2tc
 
 	html_rowend
 done

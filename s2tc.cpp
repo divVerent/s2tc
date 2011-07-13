@@ -493,9 +493,7 @@ int usage(const char *me)
 			"%s \n"
 			"    [-i infile.tga]\n"
 			"    [-o outfile.dds]\n"
-			"    [-t {DXT1|DXT3|DXT5}]\n"
-			"    [-r randomcount]\n"
-			"    [-c {RGB|YUV|SRGB|SRGB_MIXED|LAB|AVG|WAVG|NORMALMAP}]\n",
+			"    [-t {DXT1|DXT3|DXT5}]\n",
 			me);
 	return 1;
 }
@@ -531,16 +529,6 @@ int main(int argc, char **argv)
 					dxt = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 				else
 					return usage(argv[0]);
-				break;
-			case 'r':
-				snprintf(buf, sizeof(buf), "S2TC_RANDOM_COLORS=%d", atoi(optarg));
-				buf[sizeof(buf)-1] = 0;
-				putenv(buf);
-				break;
-			case 'c':
-				snprintf(buf, sizeof(buf), "S2TC_COLORDIST_MODE=%s", optarg);
-				buf[sizeof(buf)-1] = 0;
-				putenv(buf);
 				break;
 			default:
 				return usage(argv[0]);
