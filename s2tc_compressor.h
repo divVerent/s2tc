@@ -23,6 +23,7 @@ typedef enum
 	SRGB_MIXED,
 	LAB,
 	AVG,
+	WAVG,
 	NORMALMAP
 } ColorDistMode;
 

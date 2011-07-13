@@ -53,16 +53,15 @@ EOF
 	echo >&3 "<tr><th>Picture</th>"
 	echo >&3 "<th>Original</th>"
 	echo >&3 "<th>nvcompress</th>"
-	echo >&3 "<th>rand64-sRGB</th>"
-#	echo >&3 "<th>norand-sRGB</th>"
 	echo >&3 "<th>rand64-sRGB-mixed</th>"
-#	echo >&3 "<th>norand-sRGB-mixed</th>"
-	echo >&3 "<th>rand64-YUV</th>"
-#	echo >&3 "<th>norand-YUV</th>"
-	echo >&3 "<th>rand64</th>"
-#	echo >&3 "<th>norand</th>"
+	echo >&3 "<th>norand-sRGB-mixed</th>"
+	echo >&3 "<th>faster-sRGB-mixed</th>"
+	echo >&3 "<th>rand64-wavg</th>"
+	echo >&3 "<th>norand-wavg</th>"
+	echo >&3 "<th>faster-wavg</th>"
 	echo >&3 "<th>rand64-avg</th>"
-#	echo >&3 "<th>norand-avg</th>"
+	echo >&3 "<th>norand-avg</th>"
+	echo >&3 "<th>faster-avg</th>"
 	echo >&3 "</tr>"
 }
 html_rowstart()
@@ -100,16 +99,15 @@ for i in dxtfail base_concrete1a disabled floor_tile3a lift02 panel_ceil1a sunse
 	nvcompress "$i".tga "$i".dds
 	html "$i".dds
 
-	t "$i".tga "$i"-rand64-srgb.dds ./s2tc -c SRGB       -r 64
-#	t "$i".tga "$i"-norand-srgb.dds ./s2tc -c SRGB       -r 0
 	t "$i".tga "$i"-rand64-mrgb.dds ./s2tc -c SRGB_MIXED -r 64
-#	t "$i".tga "$i"-norand-mrgb.dds ./s2tc -c SRGB_MIXED -r 0
-	t "$i".tga "$i"-rand64-yuv.dds  ./s2tc -c YUV        -r 64
-#	t "$i".tga "$i"-norand-yuv.dds  ./s2tc -c YUV        -r 0
-	t "$i".tga "$i"-rand64.dds      ./s2tc -c RGB        -r 64
-#	t "$i".tga "$i"-norand.dds      ./s2tc -c RGB        -r 0
+	t "$i".tga "$i"-norand-mrgb.dds ./s2tc -c SRGB_MIXED -r 0
+	t "$i".tga "$i"-faster-mrgb.dds ./s2tc -c SRGB_MIXED -r -1
+	t "$i".tga "$i"-rand64-wavg.dds ./s2tc -c WAVG       -r 64
+	t "$i".tga "$i"-norand-wavg.dds ./s2tc -c WAVG       -r 0
+	t "$i".tga "$i"-faster-wavg.dds ./s2tc -c WAVG       -r -1
 	t "$i".tga "$i"-rand64-avg.dds  ./s2tc -c AVG        -r 64
-#	t "$i".tga "$i"-norand-avg.dds  ./s2tc -c AVG        -r 0
+	t "$i".tga "$i"-norand-avg.dds  ./s2tc -c AVG        -r 0
+	t "$i".tga "$i"-faster-avg.dds  ./s2tc -c AVG        -r -1
 
 	html_rowend
 done

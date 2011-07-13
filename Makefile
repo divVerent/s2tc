@@ -1,11 +1,12 @@
 all: s2tc libtxc_dxtn.so
 
 CFLAGS = -O3 -Wall -Wextra -fPIC
-CXXFLAGS = -O3 -Wall -Wextra -fPIC
+CXXFLAGS = $(CFLAGS)
+CFLAGS += -MMD
+CXXFLAGS += -MMD
 LDFLAGS = -lm
 
 include $(wildcard *.d)
-CXXFLAGS += -MMD
 
 s2tc: s2tc.o s2tc_compressor.o
 	$(CXX) $(LDFLAGS) -o $@ $+

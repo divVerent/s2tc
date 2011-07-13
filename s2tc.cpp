@@ -495,7 +495,7 @@ int usage(const char *me)
 			"    [-o outfile.dds]\n"
 			"    [-t {DXT1|DXT3|DXT5}]\n"
 			"    [-r randomcount]\n"
-			"    [-c {RGB|YUV|SRGB|SRGB_MIXED|LAB|AVG|NORMALMAP}]\n",
+			"    [-c {RGB|YUV|SRGB|SRGB_MIXED|LAB|AVG|WAVG|NORMALMAP}]\n",
 			me);
 	return 1;
 }
@@ -550,6 +550,8 @@ int main(int argc, char **argv)
 					cd = LAB;
 				else if(!strcasecmp(optarg, "AVG"))
 					cd = AVG;
+				else if(!strcasecmp(optarg, "WAVG"))
+					cd = WAVG;
 				else if(!strcasecmp(optarg, "NORMALMAP"))
 					cd = NORMALMAP;
 				else

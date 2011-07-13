@@ -39,6 +39,15 @@ namespace
 		return ((dr*dr) << 2) + dg*dg + ((db*db) << 2);
 	}
 
+	inline int color_dist_wavg(const color_t &a, const color_t &b)
+	{
+		int dr = a.r - b.r; // multiplier: 31 (-1..1)
+		int dg = a.g - b.g; // multiplier: 63 (-1..1)
+		int db = a.b - b.b; // multiplier: 31 (-1..1)
+		return ((dr*dr) << 2) + ((dg*dg) << 2) + (db*db);
+		// weighted 4:16:1
+	}
+
 	inline int color_dist_yuv(const color_t &a, const color_t &b)
 	{
 		int dr = a.r - b.r; // multiplier: 31 (-1..1)
@@ -178,7 +187,7 @@ namespace
 	// n: input count
 	// m: total color count (including non-counted inputs)
 	// m >= n
-	void reduce_colors_inplace(T *c, int n, int m, F dist)
+	inline void reduce_colors_inplace(T *c, int n, int m, F dist)
 	{
 		int i, j, k;
 		int bestsum = -1;
@@ -228,7 +237,7 @@ namespace
 			c[1] = c[bestj];
 	}
 	template <class T, class F>
-	void reduce_colors_inplace_2fixpoints(T *c, int n, int m, F dist, const T &fix0, const T &fix1)
+	inline void reduce_colors_inplace_2fixpoints(T *c, int n, int m, F dist, const T &fix0, const T &fix1)
 	{
 		int i, j, k;
 		int bestsum = -1;
@@ -291,55 +300,113 @@ namespace
 			c[1] = c[bestj];
 	}
 
-	template<DxtMode dxt, ColorDistFunc ColorDist, bool userandom>
-	void s2tc_encode_block(unsigned char *out, const unsigned char *rgba, int iw, int w, int h, int nrandom)
+	enum CompressionMode
 	{
-		color_t c[16 + (userandom ? nrandom : 0)];
+		MODE_NORMAL,
+		MODE_RANDOM,
+		MODE_FAST
+	};
+
+	template<DxtMode dxt, ColorDistFunc ColorDist, CompressionMode mode>
+	inline void s2tc_encode_block(unsigned char *out, const unsigned char *rgba, int iw, int w, int h, int nrandom)
+	{
+		color_t c[16 + (mode == MODE_RANDOM ? nrandom : 0)];
 
 		unsigned char ca[16];
 		int n = 0, m = 0;
 		int x, y;
 
-		for(x = 0; x < w; ++x)
-			for(y = 0; y < h; ++y)
-			{
-				c[n].r = rgba[(x + y * iw) * 4 + 2];
-				c[n].g = rgba[(x + y * iw) * 4 + 1];
-				c[n].b = rgba[(x + y * iw) * 4 + 0];
-				if(dxt == DXT5)
-					ca[n]  = rgba[(x + y * iw) * 4 + 3];
-				++n;
-			}
-
-		m = n;
-
-		if(userandom)
+		if(mode == MODE_FAST)
 		{
-			color_t mins = c[0];
-			color_t maxs = c[0];
-			for(x = 1; x < n; ++x)
+			color_t c0 = {0, 0, 0};
+
+			c[0].r = rgba[2];
+			c[0].g = rgba[1];
+			c[0].b = rgba[0];
+			c[1] = c[0];
+			int dmin = ColorDist(c[0], c0);
+			int dmax = dmin;
+			if(dxt == DXT5)
 			{
-				mins.r = min(mins.r, c[x].r);
-				mins.g = min(mins.g, c[x].g);
-				mins.b = min(mins.b, c[x].b);
-				maxs.r = max(maxs.r, c[x].r);
-				maxs.g = max(maxs.g, c[x].g);
-				maxs.b = max(maxs.b, c[x].b);
+				ca[0] = rgba[3];
+				ca[1] = ca[0];
 			}
-			color_t len = { maxs.r - mins.r + 1, maxs.g - mins.g + 1, maxs.b - mins.b + 1 };
-			for(x = 0; x < nrandom; ++x)
+
+			for(x = 0; x < w; ++x)
+				for(y = !x; y < h; ++y)
+				{
+					c[2].r = rgba[(x + y * iw) * 4 + 2];
+					c[2].g = rgba[(x + y * iw) * 4 + 1];
+					c[2].b = rgba[(x + y * iw) * 4 + 0];
+
+					int d = ColorDist(c[2], c0);
+					if(d > dmax)
+					{
+						dmax = d;
+						c[1] = c[2];
+					}
+					if(d < dmin)
+					{
+						dmin = d;
+						c[0] = c[2];
+					}
+
+					if(dxt == DXT5)
+					{
+						ca[2]  = rgba[(x + y * iw) * 4 + 3];
+						if(ca[2] > ca[1])
+							ca[1] = ca[2];
+						if(ca[2] < ca[0])
+							ca[0] = ca[2];
+					}
+				}
+
+			m = n = 2;
+		}
+		else
+		{
+			for(x = 0; x < w; ++x)
+				for(y = 0; y < h; ++y)
+				{
+					c[n].r = rgba[(x + y * iw) * 4 + 2];
+					c[n].g = rgba[(x + y * iw) * 4 + 1];
+					c[n].b = rgba[(x + y * iw) * 4 + 0];
+					if(dxt == DXT5)
+						ca[n]  = rgba[(x + y * iw) * 4 + 3];
+					++n;
+				}
+			m = n;
+
+			if(mode == MODE_RANDOM)
 			{
-				c[m].r = mins.r + rand() % len.r;
-				c[m].g = mins.g + rand() % len.g;
-				c[m].b = mins.b + rand() % len.b;
-				++m;
+				color_t mins = c[0];
+				color_t maxs = c[0];
+				for(x = 1; x < n; ++x)
+				{
+					mins.r = min(mins.r, c[x].r);
+					mins.g = min(mins.g, c[x].g);
+					mins.b = min(mins.b, c[x].b);
+					maxs.r = max(maxs.r, c[x].r);
+					maxs.g = max(maxs.g, c[x].g);
+					maxs.b = max(maxs.b, c[x].b);
+				}
+				color_t len = { maxs.r - mins.r + 1, maxs.g - mins.g + 1, maxs.b - mins.b + 1 };
+				for(x = 0; x < nrandom; ++x)
+				{
+					c[m].r = mins.r + rand() % len.r;
+					c[m].g = mins.g + rand() % len.g;
+					c[m].b = mins.b + rand() % len.b;
+					++m;
+				}
 			}
+
+			reduce_colors_inplace(c, n, m, ColorDist);
+			if(dxt == DXT5)
+				reduce_colors_inplace_2fixpoints(ca, n, n, alpha_dist, (unsigned char) 0, (unsigned char) 255);
 		}
 
-		reduce_colors_inplace(c, n, m, ColorDist);
 		if(dxt == DXT5)
 		{
-			reduce_colors_inplace_2fixpoints(ca, n, n, alpha_dist, (unsigned char) 0, (unsigned char) 255);
 			if(ca[1] < ca[0])
 			{
 				ca[2] = ca[0];
@@ -450,16 +517,18 @@ namespace
 
 	// compile time dispatch magic
 	template<DxtMode dxt, ColorDistFunc ColorDist>
-	void s2tc_encode_block(unsigned char *out, const unsigned char *rgba, int iw, int w, int h, int nrandom)
+	inline void s2tc_encode_block(unsigned char *out, const unsigned char *rgba, int iw, int w, int h, int nrandom)
 	{
-		if(nrandom)
-			s2tc_encode_block<dxt, ColorDist, true>(out, rgba, iw, w, h, nrandom);
-		else
-			s2tc_encode_block<dxt, ColorDist, false>(out, rgba, iw, w, h, nrandom);
+		if(nrandom > 0)
+			s2tc_encode_block<dxt, ColorDist, MODE_RANDOM>(out, rgba, iw, w, h, nrandom);
+		else if(nrandom == 0)
+			s2tc_encode_block<dxt, ColorDist, MODE_NORMAL>(out, rgba, iw, w, h, nrandom);
+		else // if(nrandom < 0)
+			s2tc_encode_block<dxt, ColorDist, MODE_FAST>(out, rgba, iw, w, h, nrandom);
 	}
 
 	template<ColorDistFunc ColorDist>
-	void s2tc_encode_block(unsigned char *out, const unsigned char *rgba, int iw, int w, int h, DxtMode dxt, int nrandom)
+	inline void s2tc_encode_block(unsigned char *out, const unsigned char *rgba, int iw, int w, int h, DxtMode dxt, int nrandom)
 	{
 		switch(dxt)
 		{
@@ -498,6 +567,9 @@ void s2tc_encode_block(unsigned char *out, const unsigned char *rgba, int iw, in
 			break;
 		case AVG:
 			s2tc_encode_block<color_dist_avg>(out, rgba, iw, w, h, dxt, nrandom);
+			break;
+		case WAVG:
+			s2tc_encode_block<color_dist_wavg>(out, rgba, iw, w, h, dxt, nrandom);
 			break;
 		case NORMALMAP:
 			s2tc_encode_block<color_dist_normalmap>(out, rgba, iw, w, h, dxt, nrandom);
