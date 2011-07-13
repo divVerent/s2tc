@@ -12,7 +12,7 @@ void fetch_2d_texel_rgb_dxt1(GLint srcRowStride, const GLubyte *pixdata,
 	const GLubyte *blksrc = (pixdata + ((srcRowStride + 3) / 4 * (j / 4) + (i / 4)) * 8);
 	unsigned int c  = blksrc[0] + 256*blksrc[1];
 	unsigned int c1 = blksrc[2] + 256*blksrc[3];
-	int b = blksrc[4 + j] >> (2 * i);
+	int b = (blksrc[4 + (j % 4)] >> (2 * (i % 4))) & 0x03;
 	switch(b)
 	{
 		case 0:                         break;
@@ -33,7 +33,7 @@ void fetch_2d_texel_rgba_dxt1(GLint srcRowStride, const GLubyte *pixdata,
 	const GLubyte *blksrc = (pixdata + ((srcRowStride + 3) / 4 * (j / 4) + (i / 4)) * 8);
 	unsigned int c  = blksrc[0] + 256*blksrc[1];
 	unsigned int c1 = blksrc[2] + 256*blksrc[3];
-	int b = blksrc[4 + j] >> (2 * i);
+	int b = (blksrc[4 + (j % 4)] >> (2 * (i % 4))) & 0x03;
 	switch(b)
 	{
 		case 0:                         t[3] = 255; break;
