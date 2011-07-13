@@ -501,11 +501,10 @@ int usage(const char *me)
 
 int main(int argc, char **argv)
 {
-	int x, y;
 	unsigned char *pic, *picdata;
 	int piclen;
 	const char *fourcc;
-	int blocksize, alphabits;
+	int blocksize;
 	GLenum dxt = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
 	const char *infile = NULL, *outfile = NULL;
 	FILE *outfh;
@@ -572,18 +571,15 @@ int main(int argc, char **argv)
 	{
 		case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
 			blocksize = 8;
-			alphabits = 1;
 			fourcc = "DXT1";
 			break;
 		case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
 			blocksize = 16;
-			alphabits = 4;
 			fourcc = "DXT3";
 			break;
 		default:
 		case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
 			blocksize = 16;
-			alphabits = 8;
 			fourcc = "DXT5";
 			break;
 	}
