@@ -15,10 +15,10 @@ void fetch_2d_texel_rgb_dxt1(GLint srcRowStride, const GLubyte *pixdata,
 	int b = (blksrc[4 + (j % 4)] >> (2 * (i % 4))) & 0x03;
 	switch(b)
 	{
-		case 0:                         break;
-		case 1:  c = c1;                break;
-		case 3:  if(c1 > c) { c = 0;    break; }
-		default: if(rand() & 1) c = c1; break;
+		case 0:                        break;
+		case 1:  c = c1;               break;
+		case 3:  if(c1 > c) { c = 0;   break; }
+		default: if((i^j) & 1) c = c1; break;
 	}
 	t[0] = ((c >> 11) & 0x1F); t[0] = (t[0] << 3) | (t[0] >> 2);
 	t[1] = ((c >>  5) & 0x3F); t[1] = (t[1] << 2) | (t[1] >> 4);
@@ -36,10 +36,10 @@ void fetch_2d_texel_rgba_dxt1(GLint srcRowStride, const GLubyte *pixdata,
 	int b = (blksrc[4 + (j % 4)] >> (2 * (i % 4))) & 0x03;
 	switch(b)
 	{
-		case 0:                         t[3] = 255; break;
-		case 1:  c = c1;                t[3] = 255; break;
-		case 3:  if(c1 > c) { c = 0;    t[3] =   0; break; }
-		default: if(rand() & 1) c = c1; t[3] = 255; break;
+		case 0:                        t[3] = 255; break;
+		case 1:  c = c1;               t[3] = 255; break;
+		case 3:  if(c1 > c) { c = 0;   t[3] =   0; break; }
+		default: if((i^j) & 1) c = c1; t[3] = 255; break;
 	}
 	t[0] = ((c >> 11) & 0x1F); t[0] = (t[0] << 3) | (t[0] >> 2);
 	t[1] = ((c >>  5) & 0x3F); t[1] = (t[1] << 2) | (t[1] >> 4);
@@ -57,9 +57,9 @@ void fetch_2d_texel_rgba_dxt3(GLint srcRowStride, const GLubyte *pixdata,
 	int b = (blksrc[12 + (j % 4)] >> (2 * (i % 4))) & 0x03;
 	switch(b)
 	{
-		case 0:                         break;
-		case 1:  c = c1;                break;
-		default: if(rand() & 1) c = c1; break;
+		case 0:                        break;
+		case 1:  c = c1;               break;
+		default: if((i^j) & 1) c = c1; break;
 	}
 	t[0] = ((c >> 11) & 0x1F); t[0] = (t[0] << 3) | (t[0] >> 2);
 	t[1] = ((c >>  5) & 0x3F); t[1] = (t[1] << 2) | (t[1] >> 4);
@@ -79,9 +79,9 @@ void fetch_2d_texel_rgba_dxt5(GLint srcRowStride, const GLubyte *pixdata,
 	int b = (blksrc[12 + (j % 4)] >> (2 * (i % 4))) & 0x03;
 	switch(b)
 	{
-		case 0:                         break;
-		case 1:  c = c1;                break;
-		default: if(rand() & 1) c = c1; break;
+		case 0:                        break;
+		case 1:  c = c1;               break;
+		default: if((i^j) & 1) c = c1; break;
 	}
 	t[0] = ((c >> 11) & 0x1F); t[0] = (t[0] << 3) | (t[0] >> 2);
 	t[1] = ((c >>  5) & 0x3F); t[1] = (t[1] << 2) | (t[1] >> 4);
@@ -101,11 +101,11 @@ void fetch_2d_texel_rgba_dxt5(GLint srcRowStride, const GLubyte *pixdata,
 		ab |= 4;
 	switch(ab)
 	{
-		case 0:                         break;
-		case 1:  a = a1;                break;
-		case 6:  a = 0;                 break;
-		case 7:  a = 255;               break;
-		default: if(rand() & 1) a = a1; break;
+		case 0:                        break;
+		case 1:  a = a1;               break;
+		case 6:  a = 0;                break;
+		case 7:  a = 255;              break;
+		default: if((i^j) & 1) a = a1; break;
 	}
 	t[3] = a;
 }
