@@ -1,6 +1,7 @@
 #include "libtxc_dxtn.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "s2tc_compressor.h"
 
 void fetch_2d_texel_rgb_dxt1(GLint srcRowStride, const GLubyte *pixdata,
@@ -121,16 +122,20 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 	GLint dstRowDiff;
 	unsigned char *rgba = (unsigned char *) malloc(width * height * 4);
 	unsigned char *srcaddr;
+	DxtMode dxt;
 
 	switch (destFormat) {
 		case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
 		case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
+			dxt = DXT1;
 			rgb565_image(rgba, srcPixData, width, height, srccomps, 0, 1);
 			break;
 		case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
+			dxt = DXT3;
 			rgb565_image(rgba, srcPixData, width, height, srccomps, 0, 4);
 			break;
 		case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
+			dxt = DXT5;
 			rgb565_image(rgba, srcPixData, width, height, srccomps, 0, 8);
 			break;
 		default:
@@ -139,7 +144,39 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 			return;
 	}
 
-	s2tc_encode_block_func_t encode_block;
+	ColorDistMode cd = WAVG;
+	int nrandom = -1;
+	{
+		const char *v = getenv("S2TC_COLORDIST_MODE");
+		if(v)
+		{
+			if(!strcasecmp(v, "RGB"))
+				cd = RGB;
+			else if(!strcasecmp(v, "YUV"))
+				cd = YUV;
+			else if(!strcasecmp(v, "SRGB"))
+				cd = SRGB;
+			else if(!strcasecmp(v, "SRGB_MIXED"))
+				cd = SRGB_MIXED;
+			else if(!strcasecmp(v, "LAB"))
+				cd = LAB;
+			else if(!strcasecmp(v, "AVG"))
+				cd = AVG;
+			else if(!strcasecmp(v, "WAVG"))
+				cd = WAVG;
+			else if(!strcasecmp(v, "NORMALMAP"))
+				cd = NORMALMAP;
+			else
+				fprintf(stderr, "Invalid color dist mode: %s\n", v);
+		}
+	}
+	{
+		const char *v = getenv("S2TC_RANDOM_COLORS");
+		if(v)
+			nrandom = atoi(v);
+	}
+
+	s2tc_encode_block_func_t encode_block = s2tc_encode_block_func(dxt, cd, nrandom);
 	switch (destFormat) {
 		case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
 		case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
@@ -147,7 +184,6 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 			dstRowDiff = dstRowStride >= (width * 2) ? dstRowStride - (((width + 3) & ~3) * 2) : 0;
 			/*      fprintf(stderr, "dxt1 tex width %d tex height %d dstRowStride %d\n",
 				width, height, dstRowStride); */
-			encode_block = s2tc_encode_block_func(DXT1, WAVG, -1);
 			for (j = 0; j < height; j += 4) {
 				if (height > j + 3) numypixels = 4;
 				else numypixels = height - j;
@@ -166,7 +202,6 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 			dstRowDiff = dstRowStride >= (width * 4) ? dstRowStride - (((width + 3) & ~3) * 4) : 0;
 			/*      fprintf(stderr, "dxt3 tex width %d tex height %d dstRowStride %d\n",
 				width, height, dstRowStride); */
-			encode_block = s2tc_encode_block_func(DXT3, WAVG, -1);
 			for (j = 0; j < height; j += 4) {
 				if (height > j + 3) numypixels = 4;
 				else numypixels = height - j;
@@ -185,7 +220,6 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 			dstRowDiff = dstRowStride >= (width * 4) ? dstRowStride - (((width + 3) & ~3) * 4) : 0;
 			/*      fprintf(stderr, "dxt5 tex width %d tex height %d dstRowStride %d\n",
 				width, height, dstRowStride); */
-			encode_block = s2tc_encode_block_func(DXT5, WAVG, -1);
 			for (j = 0; j < height; j += 4) {
 				if (height > j + 3) numypixels = 4;
 				else numypixels = height - j;

@@ -4,8 +4,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <getopt.h>
-
-#include "s2tc_compressor.h"
+#include "libtxc_dxtn.h"
 #include "s2tc_common.h"
 
 /* START stuff that originates from image.c in DarkPlaces */
@@ -507,11 +506,10 @@ int main(int argc, char **argv)
 	int piclen;
 	const char *fourcc;
 	int blocksize, alphabits;
-	DxtMode dxt = DXT1;
-	ColorDistMode cd = RGB;
-	int nrandom = 0;
+	GLenum dxt = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
 	const char *infile = NULL, *outfile = NULL;
 	FILE *outfh;
+	char buf[80];
 
 	int opt;
 	while((opt = getopt(argc, argv, "i:o:t:r:c:")) != -1)
@@ -526,36 +524,23 @@ int main(int argc, char **argv)
 				break;
 			case 't':
 				if(!strcasecmp(optarg, "DXT1"))
-					dxt = DXT1;
+					dxt = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
 				else if(!strcasecmp(optarg, "DXT3"))
-					dxt = DXT3;
+					dxt = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
 				else if(!strcasecmp(optarg, "DXT5"))
-					dxt = DXT5;
+					dxt = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 				else
 					return usage(argv[0]);
 				break;
 			case 'r':
-				nrandom = atoi(optarg);
+				snprintf(buf, sizeof(buf), "S2TC_RANDOM_COLORS=%d", atoi(optarg));
+				buf[sizeof(buf)-1] = 0;
+				putenv(buf);
 				break;
 			case 'c':
-				if(!strcasecmp(optarg, "RGB"))
-					cd = RGB;
-				else if(!strcasecmp(optarg, "YUV"))
-					cd = YUV;
-				else if(!strcasecmp(optarg, "SRGB"))
-					cd = SRGB;
-				else if(!strcasecmp(optarg, "SRGB_MIXED"))
-					cd = SRGB_MIXED;
-				else if(!strcasecmp(optarg, "LAB"))
-					cd = LAB;
-				else if(!strcasecmp(optarg, "AVG"))
-					cd = AVG;
-				else if(!strcasecmp(optarg, "WAVG"))
-					cd = WAVG;
-				else if(!strcasecmp(optarg, "NORMALMAP"))
-					cd = NORMALMAP;
-				else
-					return usage(argv[0]);
+				snprintf(buf, sizeof(buf), "S2TC_COLORDIST_MODE=%s", optarg);
+				buf[sizeof(buf)-1] = 0;
+				putenv(buf);
 				break;
 			default:
 				return usage(argv[0]);
@@ -585,18 +570,18 @@ int main(int argc, char **argv)
 
 	switch(dxt)
 	{
-		case DXT1:
+		case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
 			blocksize = 8;
 			alphabits = 1;
 			fourcc = "DXT1";
 			break;
-		case DXT3:
+		case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
 			blocksize = 16;
 			alphabits = 4;
 			fourcc = "DXT3";
 			break;
 		default:
-		case DXT5:
+		case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
 			blocksize = 16;
 			alphabits = 8;
 			fourcc = "DXT5";
@@ -656,18 +641,14 @@ int main(int argc, char **argv)
 		fwrite(&zero, 4, 1, outfh);
 	}
 
-	unsigned char *opic = (unsigned char *) malloc(image_width * image_height * 4);
 	for(;;)
 	{
-		rgb565_image(opic, pic, image_width, image_height, 4, 1, alphabits);
-		s2tc_encode_block_func_t encode_block = s2tc_encode_block_func(dxt, cd, nrandom);
-		for(y = 0; y < image_height; y += 4)
-			for(x = 0; x < image_width; x += 4)
-			{
-				unsigned char block[16];
-				encode_block(block, opic + (x + y * image_width) * 4, image_width, min(4, image_width - x), min(4, image_height - y), nrandom);
-				fwrite(block, blocksize, 1, outfh);
-			}
+		int blocks_w = (image_width + 3) / 4;
+		int blocks_h = (image_height + 3) / 4;
+		GLubyte *obuf = (GLubyte *) malloc(blocksize * blocks_w * blocks_h);
+		tx_compress_dxtn(4, image_width, image_height, pic, dxt, obuf, blocks_w * blocksize);
+		fwrite(obuf, blocksize * blocks_w * blocks_h, 1, outfh);
+		free(obuf);
 		if(image_width == 1 && image_height == 1)
 			break;
 		Image_MipReduce32(pic, pic, &image_width, &image_height, 1, 1);
