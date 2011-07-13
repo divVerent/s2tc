@@ -1,4 +1,4 @@
-all: s2tc libtxc_dxtn.so
+all: s2tc s2tc_decompress libtxc_dxtn.so
 
 CFLAGS = -O3 -Wall -Wextra -fPIC
 CXXFLAGS = $(CFLAGS)
