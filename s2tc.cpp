@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <getopt.h>
+#include <algorithm>
 #include "libtxc_dxtn.h"
 #include "s2tc_common.h"
 
@@ -561,6 +562,9 @@ int main(int argc, char **argv)
 		return 2;
 	}
 	pic = LoadTGA_BGRA(picdata, piclen);
+
+	for(int x = 0; x < image_width*image_height; ++x)
+		std::swap(pic[4*x], pic[4*x+2]);
 
 	int mipcount = 0;
 	while(image_width >= (1 << mipcount) || image_height >= (1 << mipcount))

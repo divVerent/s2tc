@@ -191,7 +191,7 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 				for (i = 0; i < width; i += 4) {
 					if (width > i + 3) numxpixels = 4;
 					else numxpixels = width - i;
-					encode_block(blkaddr, srcaddr, width, numxpixels, numypixels, -1);
+					encode_block(blkaddr, srcaddr, width, numxpixels, numypixels, nrandom);
 					srcaddr += 4 * numxpixels;
 					blkaddr += 8;
 				}
@@ -209,7 +209,7 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 				for (i = 0; i < width; i += 4) {
 					if (width > i + 3) numxpixels = 4;
 					else numxpixels = width - i;
-					encode_block(blkaddr, srcaddr, width, numxpixels, numypixels, -1);
+					encode_block(blkaddr, srcaddr, width, numxpixels, numypixels, nrandom);
 					srcaddr += 4 * numxpixels;
 					blkaddr += 16;
 				}
@@ -227,7 +227,7 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 				for (i = 0; i < width; i += 4) {
 					if (width > i + 3) numxpixels = 4;
 					else numxpixels = width - i;
-					encode_block(blkaddr, srcaddr, width, numxpixels, numypixels, -1);
+					encode_block(blkaddr, srcaddr, width, numxpixels, numypixels, nrandom);
 					srcaddr += 4 * numxpixels;
 					blkaddr += 16;
 				}
