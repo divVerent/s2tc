@@ -648,64 +648,65 @@ namespace
 
 	// compile time dispatch magic
 	template<DxtMode dxt, ColorDistFunc ColorDist>
-	inline void s2tc_encode_block(unsigned char *out, const unsigned char *rgba, int iw, int w, int h, int nrandom)
+	inline s2tc_encode_block_func_t s2tc_encode_block_func(int nrandom)
 	{
 		if(nrandom > 0)
-			s2tc_encode_block<dxt, ColorDist, MODE_RANDOM>(out, rgba, iw, w, h, nrandom);
+			return s2tc_encode_block<dxt, ColorDist, MODE_RANDOM>;
 		else if(nrandom == 0)
-			s2tc_encode_block<dxt, ColorDist, MODE_NORMAL>(out, rgba, iw, w, h, nrandom);
+			return s2tc_encode_block<dxt, ColorDist, MODE_NORMAL>;
 		else if(nrandom == -1)
-			s2tc_encode_block<dxt, ColorDist, MODE_FAST>(out, rgba, iw, w, h, nrandom);
+			return s2tc_encode_block<dxt, ColorDist, MODE_FAST>;
 		else // if(nrandom < -1)
-			s2tc_encode_block<dxt, ColorDist, MODE_SUPERFAST>(out, rgba, iw, w, h, nrandom);
+			return s2tc_encode_block<dxt, ColorDist, MODE_SUPERFAST>;
 	}
 
 	template<ColorDistFunc ColorDist>
-	inline void s2tc_encode_block(unsigned char *out, const unsigned char *rgba, int iw, int w, int h, DxtMode dxt, int nrandom)
+	inline s2tc_encode_block_func_t s2tc_encode_block_func(DxtMode dxt, int nrandom)
 	{
 		switch(dxt)
 		{
 			case DXT1:
-				s2tc_encode_block<DXT1, ColorDist>(out, rgba, iw, w, h, nrandom);
+				return s2tc_encode_block_func<DXT1, ColorDist>(nrandom);
 				break;
 			case DXT3:
-				s2tc_encode_block<DXT3, ColorDist>(out, rgba, iw, w, h, nrandom);
+				return s2tc_encode_block_func<DXT3, ColorDist>(nrandom);
 				break;
 			default:
 			case DXT5:
-				s2tc_encode_block<DXT5, ColorDist>(out, rgba, iw, w, h, nrandom);
+				return s2tc_encode_block_func<DXT5, ColorDist>(nrandom);
 				break;
 		}
 	}
 };
 
-void s2tc_encode_block(unsigned char *out, const unsigned char *rgba, int iw, int w, int h, DxtMode dxt, ColorDistMode cd, int nrandom)
+s2tc_encode_block_func_t s2tc_encode_block_func(DxtMode dxt, ColorDistMode cd, int nrandom)
 {
 	switch(cd)
 	{
 		case RGB:
-			s2tc_encode_block<color_dist_rgb>(out, rgba, iw, w, h, dxt, nrandom);
+			return s2tc_encode_block_func<color_dist_rgb>(dxt, nrandom);
 			break;
 		case YUV:
-			s2tc_encode_block<color_dist_yuv>(out, rgba, iw, w, h, dxt, nrandom);
+			return s2tc_encode_block_func<color_dist_yuv>(dxt, nrandom);
 			break;
 		case SRGB:
-			s2tc_encode_block<color_dist_srgb>(out, rgba, iw, w, h, dxt, nrandom);
+			return s2tc_encode_block_func<color_dist_srgb>(dxt, nrandom);
 			break;
 		case SRGB_MIXED:
-			s2tc_encode_block<color_dist_srgb_mixed>(out, rgba, iw, w, h, dxt, nrandom);
+			return s2tc_encode_block_func<color_dist_srgb_mixed>(dxt, nrandom);
 			break;
 		case LAB:
-			s2tc_encode_block<color_dist_lab_srgb>(out, rgba, iw, w, h, dxt, nrandom);
+			return s2tc_encode_block_func<color_dist_lab_srgb>(dxt, nrandom);
 			break;
 		case AVG:
-			s2tc_encode_block<color_dist_avg>(out, rgba, iw, w, h, dxt, nrandom);
+			return s2tc_encode_block_func<color_dist_avg>(dxt, nrandom);
 			break;
+		default:
 		case WAVG:
-			s2tc_encode_block<color_dist_wavg>(out, rgba, iw, w, h, dxt, nrandom);
+			return s2tc_encode_block_func<color_dist_wavg>(dxt, nrandom);
 			break;
 		case NORMALMAP:
-			s2tc_encode_block<color_dist_normalmap>(out, rgba, iw, w, h, dxt, nrandom);
+			return s2tc_encode_block_func<color_dist_normalmap>(dxt, nrandom);
 			break;
 	}
 }

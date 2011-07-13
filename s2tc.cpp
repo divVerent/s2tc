@@ -660,11 +660,12 @@ int main(int argc, char **argv)
 	for(;;)
 	{
 		rgb565_image(opic, pic, image_width, image_height, 4, 1, alphabits);
+		s2tc_encode_block_func_t encode_block = s2tc_encode_block_func(dxt, cd, nrandom);
 		for(y = 0; y < image_height; y += 4)
 			for(x = 0; x < image_width; x += 4)
 			{
 				unsigned char block[16];
-				s2tc_encode_block(block, opic + (x + y * image_width) * 4, image_width, min(4, image_width - x), min(4, image_height - y), dxt, cd, nrandom);
+				encode_block(block, opic + (x + y * image_width) * 4, image_width, min(4, image_width - x), min(4, image_height - y), nrandom);
 				fwrite(block, blocksize, 1, outfh);
 			}
 		if(image_width == 1 && image_height == 1)

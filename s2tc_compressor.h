@@ -27,7 +27,8 @@ typedef enum
 	NORMALMAP
 } ColorDistMode;
 
-void s2tc_encode_block(unsigned char *out, const unsigned char *rgba, int iw, int w, int h, DxtMode dxt, ColorDistMode cd, int nrandom);
+typedef void (*s2tc_encode_block_func_t) (unsigned char *out, const unsigned char *rgba, int iw, int w, int h, int nrandom);
+s2tc_encode_block_func_t s2tc_encode_block_func(DxtMode dxt, ColorDistMode cd, int nrandom);
 
 #ifdef __cplusplus
 }

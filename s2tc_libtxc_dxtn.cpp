@@ -7,7 +7,7 @@ void fetch_2d_texel_rgb_dxt1(GLint srcRowStride, const GLubyte *pixdata,
 			     GLint i, GLint j, GLvoid *texel)
 {
 	// fetches a single texel (i,j) into pixdata (RGB)
-	GLubyte *t = texel;
+	GLubyte *t = (GLubyte *) texel;
 	const GLubyte *blksrc = (pixdata + ((srcRowStride + 3) / 4 * (j / 4) + (i / 4)) * 8);
 	unsigned int c  = blksrc[0] + 256*blksrc[1];
 	unsigned int c1 = blksrc[2] + 256*blksrc[3];
@@ -28,7 +28,7 @@ void fetch_2d_texel_rgba_dxt1(GLint srcRowStride, const GLubyte *pixdata,
 			     GLint i, GLint j, GLvoid *texel)
 {
 	// fetches a single texel (i,j) into pixdata (RGBA)
-	GLubyte *t = texel;
+	GLubyte *t = (GLubyte *) texel;
 	const GLubyte *blksrc = (pixdata + ((srcRowStride + 3) / 4 * (j / 4) + (i / 4)) * 8);
 	unsigned int c  = blksrc[0] + 256*blksrc[1];
 	unsigned int c1 = blksrc[2] + 256*blksrc[3];
@@ -49,7 +49,7 @@ void fetch_2d_texel_rgba_dxt3(GLint srcRowStride, const GLubyte *pixdata,
 			     GLint i, GLint j, GLvoid *texel)
 {
 	// fetches a single texel (i,j) into pixdata (RGBA)
-	GLubyte *t = texel;
+	GLubyte *t = (GLubyte *) texel;
 	const GLubyte *blksrc = (pixdata + ((srcRowStride + 3) / 4 * (j / 4) + (i / 4)) * 8);
 	unsigned int c  = blksrc[8] + 256*blksrc[9];
 	unsigned int c1 = blksrc[10] + 256*blksrc[11];
@@ -71,7 +71,7 @@ void fetch_2d_texel_rgba_dxt5(GLint srcRowStride, const GLubyte *pixdata,
 			     GLint i, GLint j, GLvoid *texel)
 {
 	// fetches a single texel (i,j) into pixdata (RGBA)
-	GLubyte *t = texel;
+	GLubyte *t = (GLubyte *) texel;
 	const GLubyte *blksrc = (pixdata + ((srcRowStride + 3) / 4 * (j / 4) + (i / 4)) * 8);
 	unsigned int c  = blksrc[8] + 256*blksrc[9];
 	unsigned int c1 = blksrc[10] + 256*blksrc[11];
@@ -119,7 +119,7 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 	GLint numxpixels, numypixels;
 	GLint i, j;
 	GLint dstRowDiff;
-	unsigned char *rgba = malloc(width * height * 4);
+	unsigned char *rgba = (unsigned char *) malloc(width * height * 4);
 	unsigned char *srcaddr;
 
 	switch (destFormat) {
@@ -139,6 +139,7 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 			return;
 	}
 
+	s2tc_encode_block_func_t encode_block;
 	switch (destFormat) {
 		case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
 		case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
@@ -146,6 +147,7 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 			dstRowDiff = dstRowStride >= (width * 2) ? dstRowStride - (((width + 3) & ~3) * 2) : 0;
 			/*      fprintf(stderr, "dxt1 tex width %d tex height %d dstRowStride %d\n",
 				width, height, dstRowStride); */
+			encode_block = s2tc_encode_block_func(DXT1, WAVG, -1);
 			for (j = 0; j < height; j += 4) {
 				if (height > j + 3) numypixels = 4;
 				else numypixels = height - j;
@@ -153,7 +155,7 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 				for (i = 0; i < width; i += 4) {
 					if (width > i + 3) numxpixels = 4;
 					else numxpixels = width - i;
-					s2tc_encode_block(blkaddr, srcaddr, width, numxpixels, numypixels, DXT1, SRGB_MIXED, 0);
+					encode_block(blkaddr, srcaddr, width, numxpixels, numypixels, -1);
 					srcaddr += 4 * numxpixels;
 					blkaddr += 8;
 				}
@@ -164,6 +166,7 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 			dstRowDiff = dstRowStride >= (width * 4) ? dstRowStride - (((width + 3) & ~3) * 4) : 0;
 			/*      fprintf(stderr, "dxt3 tex width %d tex height %d dstRowStride %d\n",
 				width, height, dstRowStride); */
+			encode_block = s2tc_encode_block_func(DXT3, WAVG, -1);
 			for (j = 0; j < height; j += 4) {
 				if (height > j + 3) numypixels = 4;
 				else numypixels = height - j;
@@ -171,7 +174,7 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 				for (i = 0; i < width; i += 4) {
 					if (width > i + 3) numxpixels = 4;
 					else numxpixels = width - i;
-					s2tc_encode_block(blkaddr, srcaddr, width, numxpixels, numypixels, DXT3, SRGB_MIXED, 0);
+					encode_block(blkaddr, srcaddr, width, numxpixels, numypixels, -1);
 					srcaddr += 4 * numxpixels;
 					blkaddr += 16;
 				}
@@ -182,6 +185,7 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 			dstRowDiff = dstRowStride >= (width * 4) ? dstRowStride - (((width + 3) & ~3) * 4) : 0;
 			/*      fprintf(stderr, "dxt5 tex width %d tex height %d dstRowStride %d\n",
 				width, height, dstRowStride); */
+			encode_block = s2tc_encode_block_func(DXT5, WAVG, -1);
 			for (j = 0; j < height; j += 4) {
 				if (height > j + 3) numypixels = 4;
 				else numypixels = height - j;
@@ -189,7 +193,7 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 				for (i = 0; i < width; i += 4) {
 					if (width > i + 3) numxpixels = 4;
 					else numxpixels = width - i;
-					s2tc_encode_block(blkaddr, srcaddr, width, numxpixels, numypixels, DXT5, WAVG, -1);
+					encode_block(blkaddr, srcaddr, width, numxpixels, numypixels, -1);
 					srcaddr += 4 * numxpixels;
 					blkaddr += 16;
 				}
