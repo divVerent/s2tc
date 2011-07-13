@@ -19,9 +19,9 @@ void fetch_2d_texel_rgb_dxt1(GLint srcRowStride, const GLubyte *pixdata,
 		case 3:  if(c1 > c) { c = 0;    break; }
 		default: if(rand() & 1) c = c1; break;
 	}
-	t[2] = ((c >> 11) & 0x1F) << 3;
-	t[1] = ((c >>  5) & 0x3F) << 2;
-	t[0] = ((c      ) & 0x1F) << 3;
+	t[2] = ((c >> 11) & 0x1F); t[2] = (t[2] << 3) | (t[2] >> 2);
+	t[1] = ((c >>  5) & 0x3F); t[1] = (t[1] << 2) | (t[1] >> 4);
+	t[0] = ((c      ) & 0x1F); t[0] = (t[0] << 3) | (t[0] >> 2);
 }
 
 void fetch_2d_texel_rgba_dxt1(GLint srcRowStride, const GLubyte *pixdata,
@@ -40,21 +40,73 @@ void fetch_2d_texel_rgba_dxt1(GLint srcRowStride, const GLubyte *pixdata,
 		case 3:  if(c1 > c) { c = 0;    t[3] =   0; break; }
 		default: if(rand() & 1) c = c1; t[3] = 255; break;
 	}
-	t[2] = ((c >> 11) & 0x1F) << 3;
-	t[1] = ((c >>  5) & 0x3F) << 2;
-	t[0] = ((c      ) & 0x1F) << 3;
+	t[2] = ((c >> 11) & 0x1F); t[2] = (t[2] << 3) | (t[2] >> 2);
+	t[1] = ((c >>  5) & 0x3F); t[1] = (t[1] << 2) | (t[1] >> 4);
+	t[0] = ((c      ) & 0x1F); t[0] = (t[0] << 3) | (t[0] >> 2);
 }
 
 void fetch_2d_texel_rgba_dxt3(GLint srcRowStride, const GLubyte *pixdata,
 			     GLint i, GLint j, GLvoid *texel)
 {
-	// TODO
+	// fetches a single texel (i,j) into pixdata (RGBA)
+	GLubyte *t = texel;
+	const GLubyte *blksrc = (pixdata + ((srcRowStride + 3) / 4 * (j / 4) + (i / 4)) * 8);
+	unsigned int c  = blksrc[8] + 256*blksrc[9];
+	unsigned int c1 = blksrc[10] + 256*blksrc[11];
+	int b = (blksrc[12 + (j % 4)] >> (2 * (i % 4))) & 0x03;
+	switch(b)
+	{
+		case 0:                         break;
+		case 1:  c = c1;                break;
+		default: if(rand() & 1) c = c1; break;
+	}
+	t[2] = ((c >> 11) & 0x1F); t[2] = (t[2] << 3) | (t[2] >> 2);
+	t[1] = ((c >>  5) & 0x3F); t[1] = (t[1] << 2) | (t[1] >> 4);
+	t[0] = ((c      ) & 0x1F); t[0] = (t[0] << 3) | (t[0] >> 2);
+	int a = (blksrc[(j % 4) * 2 + (i % 4) / 2] >> (4 * (i % 4) % 2)) & 0x0F;
+	t[3] = a | (a << 4);
 }
 
 void fetch_2d_texel_rgba_dxt5(GLint srcRowStride, const GLubyte *pixdata,
 			     GLint i, GLint j, GLvoid *texel)
 {
-	// TODO
+	// fetches a single texel (i,j) into pixdata (RGBA)
+	GLubyte *t = texel;
+	const GLubyte *blksrc = (pixdata + ((srcRowStride + 3) / 4 * (j / 4) + (i / 4)) * 8);
+	unsigned int c  = blksrc[8] + 256*blksrc[9];
+	unsigned int c1 = blksrc[10] + 256*blksrc[11];
+	int b = (blksrc[12 + (j % 4)] >> (2 * (i % 4))) & 0x03;
+	switch(b)
+	{
+		case 0:                         break;
+		case 1:  c = c1;                break;
+		default: if(rand() & 1) c = c1; break;
+	}
+	t[2] = ((c >> 11) & 0x1F); t[2] = (t[2] << 3) | (t[2] >> 2);
+	t[1] = ((c >>  5) & 0x3F); t[1] = (t[1] << 2) | (t[1] >> 4);
+	t[0] = ((c      ) & 0x1F); t[0] = (t[0] << 3) | (t[0] >> 2);
+
+	unsigned int a  = blksrc[0];
+	unsigned int a1 = blksrc[1];
+	int abit = ((j % 4) * 4 + (i % 4)) * 3;
+	int ab = 0;
+	if(blksrc[(abit / 8)] & (1 << (abit % 8)))
+		ab |= 1;
+	++abit;
+	if(blksrc[(abit / 8)] & (1 << (abit % 8)))
+		ab |= 2;
+	++abit;
+	if(blksrc[(abit / 8)] & (1 << (abit % 8)))
+		ab |= 4;
+	switch(ab)
+	{
+		case 0:                         break;
+		case 1:  a = a1;                break;
+		case 6:  a = 0;                 break;
+		case 7:  a = 255;               break;
+		default: if(rand() & 1) a = a1; break;
+	}
+	t[3] = a;
 }
 
 void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
