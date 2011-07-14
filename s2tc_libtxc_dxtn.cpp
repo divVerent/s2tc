@@ -147,7 +147,7 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 
 	ColorDistMode cd = WAVG;
 	int nrandom = -1;
-	bool refine = true;
+	RefinementMode refine = REFINE_ALWAYS;
 	{
 		const char *v = getenv("S2TC_COLORDIST_MODE");
 		if(v)
@@ -180,7 +180,16 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 	{
 		const char *v = getenv("S2TC_REFINE_COLORS");
 		if(v)
-			refine = atoi(v);
+		{
+			if(!strcasecmp(v, "NEVER"))
+				refine = REFINE_NEVER;
+			else if(!strcasecmp(v, "ALWAYS"))
+				refine = REFINE_ALWAYS;
+			else if(!strcasecmp(v, "CHECK"))
+				refine = REFINE_CHECK;
+			else
+				fprintf(stderr, "Invalid refinement mode: %s\n", v);
+		}
 	}
 
 	s2tc_encode_block_func_t encode_block = s2tc_encode_block_func(dxt, cd, nrandom, refine);

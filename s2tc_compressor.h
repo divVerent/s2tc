@@ -9,12 +9,19 @@ extern "C" {
 
 void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h, int srccomps, int bgr, int alphabits);
 
-typedef enum
+enum DxtMode
 {
 	DXT1,
 	DXT3,
 	DXT5
-} DxtMode;
+};
+enum RefinementMode
+{
+	REFINE_NEVER,
+	REFINE_ALWAYS,
+	REFINE_CHECK
+};
+
 typedef enum
 {
 	RGB,
@@ -28,7 +35,7 @@ typedef enum
 } ColorDistMode;
 
 typedef void (*s2tc_encode_block_func_t) (unsigned char *out, const unsigned char *rgba, int iw, int w, int h, int nrandom);
-s2tc_encode_block_func_t s2tc_encode_block_func(DxtMode dxt, ColorDistMode cd, int nrandom, bool refine);
+s2tc_encode_block_func_t s2tc_encode_block_func(DxtMode dxt, ColorDistMode cd, int nrandom, RefinementMode refine);
 
 #ifdef __cplusplus
 }

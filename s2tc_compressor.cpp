@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "s2tc_compressor.h"
 #include "s2tc_common.h"
@@ -341,7 +342,7 @@ namespace
 		return sqrtf(comp) + 0.5f;
 	}
 
-	template<DxtMode dxt, ColorDistFunc ColorDist, CompressionMode mode, bool refine>
+	template<DxtMode dxt, ColorDistFunc ColorDist, CompressionMode mode, RefinementMode refine>
 	inline void s2tc_encode_block(unsigned char *out, const unsigned char *rgba, int iw, int w, int h, int nrandom)
 	{
 		color_t c[16 + (mode == MODE_RANDOM ? nrandom : 0)];
@@ -448,7 +449,7 @@ namespace
 				reduce_colors_inplace_2fixpoints(ca, n, n, alpha_dist, (unsigned char) 0, (unsigned char) 255);
 		}
 
-		if(!refine)
+		if(refine == REFINE_NEVER)
 		{
 			if(dxt == DXT5)
 			{
@@ -509,7 +510,7 @@ namespace
 							else if(da[0] <= da[1])
 							{
 								// 0
-								if(refine)
+								if(refine != REFINE_NEVER)
 								{
 									++na0;
 									sa0 += ca[2];
@@ -519,7 +520,7 @@ namespace
 							{
 								// 1
 								out[bitindex / 8 + 2] |= (1 << (bitindex % 8));
-								if(refine)
+								if(refine != REFINE_NEVER)
 								{
 									++na1;
 									sa1 += ca[2];
@@ -530,7 +531,7 @@ namespace
 						{
 							int bitindex = pindex * 2;
 							out[bitindex / 8 + 12] |= (1 << (bitindex % 8));
-							if(refine)
+							if(refine != REFINE_NEVER)
 							{
 								++nc1;
 								sc1r += refine_component_encode<ColorDist>(c[2].r);
@@ -540,7 +541,7 @@ namespace
 						}
 						else
 						{
-							if(refine)
+							if(refine != REFINE_NEVER)
 							{
 								++nc0;
 								sc0r += refine_component_encode<ColorDist>(c[2].r);
@@ -558,7 +559,7 @@ namespace
 						{
 							int bitindex = pindex * 2;
 							out[bitindex / 8 + 12] |= (1 << (bitindex % 8));
-							if(refine)
+							if(refine != REFINE_NEVER)
 							{
 								++nc1;
 								sc1r += refine_component_encode<ColorDist>(c[2].r);
@@ -568,7 +569,7 @@ namespace
 						}
 						else
 						{
-							if(refine)
+							if(refine != REFINE_NEVER)
 							{
 								++nc0;
 								sc0r += refine_component_encode<ColorDist>(c[2].r);
@@ -585,7 +586,7 @@ namespace
 							else if(ColorDist(c[0], c[2]) > ColorDist(c[1], c[2]))
 							{
 								out[bitindex / 8 + 4] |= (1 << (bitindex % 8));
-								if(refine)
+								if(refine != REFINE_NEVER)
 								{
 									++nc1;
 									sc1r += refine_component_encode<ColorDist>(c[2].r);
@@ -595,7 +596,7 @@ namespace
 							}
 							else
 							{
-								if(refine)
+								if(refine != REFINE_NEVER)
 								{
 									++nc0;
 									sc0r += refine_component_encode<ColorDist>(c[2].r);
@@ -607,14 +608,24 @@ namespace
 						break;
 				}
 			}
-		if(refine)
+		if(refine != REFINE_NEVER)
 		{
 			if(dxt == DXT5)
 			{
+				if(refine == REFINE_CHECK)
+				{
+					ca[2] = ca[0];
+					ca[3] = ca[1];
+				}
 				if(na0)
 					ca[0] = (2 * sa0 + na0) / (2 * na0);
 				if(na1)
 					ca[1] = (2 * sa1 + na1) / (2 * na1);
+			}
+			if(refine == REFINE_CHECK)
+			{
+				c[2] = c[0];
+				c[3] = c[1];
 			}
 			if(nc0)
 			{
@@ -627,6 +638,46 @@ namespace
 				c[1].r = refine_component_decode<ColorDist>((2 * sc1r + nc1) / (2 * nc1));
 				c[1].g = refine_component_decode<ColorDist>((2 * sc1g + nc1) / (2 * nc1));
 				c[1].b = refine_component_decode<ColorDist>((2 * sc1b + nc1) / (2 * nc1));
+			}
+
+			if(refine == REFINE_CHECK)
+			{
+				int score_01 = 0;
+				int score_23 = 0;
+				for(x = 0; x < w; ++x)
+					for(y = 0; y < h; ++y)
+					{
+						int pindex = (x+y*4);
+						c[4].r = rgba[(x + y * iw) * 4 + 2];
+						c[4].g = rgba[(x + y * iw) * 4 + 1];
+						c[4].b = rgba[(x + y * iw) * 4 + 0];
+						ca[4]  = rgba[(x + y * iw) * 4 + 3];
+						if(dxt == DXT1 && !ca[4])
+							continue;
+						int bitindex = pindex * 2;
+						if(out[bitindex / 8 + (dxt == DXT1 ? 4 : 12)] & (1 << (bitindex % 8)))
+						{
+							// we picked an 1
+							score_01 += ColorDist(c[1], c[4]);
+							score_23 += ColorDist(c[3], c[4]);
+						}
+						else
+						{
+							// we picked a 0
+							score_01 += ColorDist(c[0], c[4]);
+							score_23 += ColorDist(c[2], c[4]);
+						}
+					}
+
+				if(score_23 < score_01)
+				{
+					// refinement was BAD
+					c[0] = c[2];
+					c[1] = c[3];
+				}
+
+				// alpha refinement is always good and doesn't
+				// need to be checked because alpha is linear
 			}
 
 			if(dxt == DXT5)
@@ -690,16 +741,24 @@ namespace
 
 	// compile time dispatch magic
 	template<DxtMode dxt, ColorDistFunc ColorDist, CompressionMode mode>
-	inline s2tc_encode_block_func_t s2tc_encode_block_func(bool refine)
+	inline s2tc_encode_block_func_t s2tc_encode_block_func(RefinementMode refine)
 	{
-		if(refine)
-			return s2tc_encode_block<dxt, ColorDist, mode, true>;
-		else
-			return s2tc_encode_block<dxt, ColorDist, mode, false>;
+		switch(refine)
+		{
+			case REFINE_NEVER:
+				return s2tc_encode_block<dxt, ColorDist, mode, REFINE_NEVER>;
+			case REFINE_CHECK:
+				// these color dist functions do not need the refinement check, as they always improve the situation
+				if(ColorDist != color_dist_avg && ColorDist != color_dist_wavg)
+					return s2tc_encode_block<dxt, ColorDist, mode, REFINE_CHECK>;
+			default:
+			case REFINE_ALWAYS:
+				return s2tc_encode_block<dxt, ColorDist, mode, REFINE_ALWAYS>;
+		}
 	}
 
 	template<DxtMode dxt, ColorDistFunc ColorDist>
-	inline s2tc_encode_block_func_t s2tc_encode_block_func(int nrandom, bool refine)
+	inline s2tc_encode_block_func_t s2tc_encode_block_func(int nrandom, RefinementMode refine)
 	{
 		if(nrandom > 0)
 			return s2tc_encode_block_func<dxt, ColorDist, MODE_RANDOM>(refine);
@@ -710,7 +769,7 @@ namespace
 	}
 
 	template<ColorDistFunc ColorDist>
-	inline s2tc_encode_block_func_t s2tc_encode_block_func(DxtMode dxt, int nrandom, bool refine)
+	inline s2tc_encode_block_func_t s2tc_encode_block_func(DxtMode dxt, int nrandom, RefinementMode refine)
 	{
 		switch(dxt)
 		{
@@ -728,7 +787,7 @@ namespace
 	}
 };
 
-s2tc_encode_block_func_t s2tc_encode_block_func(DxtMode dxt, ColorDistMode cd, int nrandom, bool refine)
+s2tc_encode_block_func_t s2tc_encode_block_func(DxtMode dxt, ColorDistMode cd, int nrandom, RefinementMode refine)
 {
 	switch(cd)
 	{
