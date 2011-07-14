@@ -52,9 +52,15 @@ EOF
 	echo >&3 "<table>"
 	echo >&3 "<tr><th>Picture</th>"
 	echo >&3 "<th>Original</th>"
-	echo >&3 "<th>Compressonator</th>"
-	echo >&3 "<th>nvcompress</th>"
-	echo >&3 "<th>libtxc_dxtn</th>"
+	if $use_compressonator; then
+		echo >&3 "<th>Compressonator</th>"
+	fi
+	if $use_nvcompress; then
+		echo >&3 "<th>nvcompress</th>"
+	fi
+	if $use_libtxc_dxtn; then
+		echo >&3 "<th>libtxc_dxtn</th>"
+	fi
 	echo >&3 "<th>rand64-sRGB-mixed</th>"
 	echo >&3 "<th>rand64-wavg</th>"
 	echo >&3 "<th>norand-wavg</th>"
@@ -94,19 +100,41 @@ t()
 	echo "$LD_PRELOAD"
 }
 
+if which nvcompress >/dev/null 2>&1; then
+	use_nvcompress=true
+else
+	use_nvcompress=false
+fi
+if which wine >/dev/null 2>&1 && [ -f "$HOME/.wine/drive_c/Program Files (x86)/AMD/The Compressonator 1.50/TheCompressonator.exe" ]; then
+	use_compressonator=true
+else
+	use_compressonator=false
+fi
+if [ -f /usr/lib/libtxc_dxtn.so ]; then
+	use_libtxc_dxtn=true
+else
+	use_libtxc_dxtn=false
+fi
+
 html_start
 for i in dxtfail base_concrete1a disabled floor_tile3a lift02 panel_ceil1a sunset amelia rms noise noise_solid supernova ishihara augenkrebs; do
 	html_rowstart "$i"
 
 	html "$i".tga
 
-	time wine "c:/Program Files (x86)/AMD/The Compressonator 1.50/TheCompressonator.exe" -convert -overwrite -mipmaps "$i".tga "$i"-amdcompress.dds -codec DXTC.dll +fourCC DXT1 -mipper BoxFilter.dll
-	html "$i"-amdcompress.dds
+	if $use_compressonator; then
+		time wine "c:/Program Files (x86)/AMD/The Compressonator 1.50/TheCompressonator.exe" -convert -overwrite -mipmaps "$i".tga "$i"-amdcompress.dds -codec DXTC.dll +fourCC DXT1 -mipper BoxFilter.dll
+		html "$i"-amdcompress.dds
+	fi
 
-	time nvcompress "$i".tga "$i"-nvcompress.dds
-	html "$i"-nvcompress.dds
+	if $use_nvcompress; then
+		time nvcompress "$i".tga "$i"-nvcompress.dds
+		html "$i"-nvcompress.dds
+	fi
 
-	( LD_PRELOAD=/usr/lib/libtxc_dxtn.so                   t "$i".tga "$i"-libtxc_dxtn.dds ./s2tc )
+	if $use_libtxc_dxtn; then
+		( LD_PRELOAD=/usr/lib/libtxc_dxtn.so           t "$i".tga "$i"-libtxc_dxtn.dds ./s2tc )
+	fi
 	( S2TC_COLORDIST_MODE=SRGB_MIXED S2TC_RANDOM_COLORS=64 t "$i".tga "$i"-rand64-mrgb.dds ./s2tc )
 	( S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=64 t "$i".tga "$i"-rand64-wavg.dds ./s2tc )
 	( S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=0  t "$i".tga "$i"-norand-wavg.dds ./s2tc )
