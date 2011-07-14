@@ -59,20 +59,15 @@ EOF
 	if $use_nvcompress; then
 		echo >&3 "<th>nvcompress</th>"
 	fi
-	echo >&3 "<th>rand64-sRGB-mixed refined</th>"
-	echo >&3 "<th>rand64-sRGB-mixed normal</th>"
-	echo >&3 "<th>rand64-wavg refined</th>"
-	echo >&3 "<th>rand64-wavg normal</th>"
-	echo >&3 "<th>rand64-avg refined</th>"
-	echo >&3 "<th>rand64-avg normal</th>"
+	echo >&3 "<th>rand64-sRGB-mixed</th>"
+	echo >&3 "<th>rand64-wavg</th>"
+	echo >&3 "<th>rand64-avg</th>"
 
 	if $use_libtxc_dxtn; then
 		echo >&3 "<th>libtxc_dxtn</th>"
 	fi
-	echo >&3 "<th>norand-wavg refined</th>"
-	echo >&3 "<th>norand-wavg normal</th>"
-	echo >&3 "<th>faster-wavg refined</th>"
-	echo >&3 "<th>faster-wavg normal</th>"
+	echo >&3 "<th>norand-wavg</th>"
+	echo >&3 "<th>faster-wavg</th>"
 
 	echo >&3 "</tr>"
 }
@@ -141,19 +136,14 @@ for i in dxtfail base_concrete1a disabled floor_tile3a lift02 panel_ceil1a sunse
 	fi
 
 	( S2TC_COLORDIST_MODE=SRGB_MIXED S2TC_RANDOM_COLORS=64 S2TC_REFINE_COLORS=CHECK  t "$i".tga "$i"-rand64-mrgb-r.dds ./s2tc )
-	( S2TC_COLORDIST_MODE=SRGB_MIXED S2TC_RANDOM_COLORS=64 S2TC_REFINE_COLORS=NEVER  t "$i".tga "$i"-rand64-mrgb-n.dds ./s2tc )
 	( S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=64 S2TC_REFINE_COLORS=CHECK  t "$i".tga "$i"-rand64-wavg-r.dds ./s2tc )
-	( S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=64 S2TC_REFINE_COLORS=NEVER  t "$i".tga "$i"-rand64-wavg-n.dds ./s2tc )
 	( S2TC_COLORDIST_MODE=AVG        S2TC_RANDOM_COLORS=64 S2TC_REFINE_COLORS=CHECK  t "$i".tga "$i"-rand64-avg-r.dds  ./s2tc )
-	( S2TC_COLORDIST_MODE=AVG        S2TC_RANDOM_COLORS=64 S2TC_REFINE_COLORS=NEVER  t "$i".tga "$i"-rand64-avg-n.dds  ./s2tc )
 
 	if $use_libtxc_dxtn; then
 		( LD_PRELOAD=/usr/lib/libtxc_dxtn.so                                t "$i".tga "$i"-libtxc_dxtn.dds ./s2tc )
 	fi
 	( S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=0  S2TC_REFINE_COLORS=ALWAYS t "$i".tga "$i"-norand-wavg-r.dds ./s2tc )
-	( S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=0  S2TC_REFINE_COLORS=NEVER  t "$i".tga "$i"-norand-wavg-n.dds ./s2tc )
 	( S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=-1 S2TC_REFINE_COLORS=ALWAYS t "$i".tga "$i"-faster-wavg-r.dds ./s2tc )
-	( S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=-1 S2TC_REFINE_COLORS=NEVER  t "$i".tga "$i"-faster-wavg-n.dds ./s2tc )
 
 	html_rowend
 done
