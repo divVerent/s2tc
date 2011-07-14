@@ -52,20 +52,23 @@ EOF
 	echo >&3 "<table>"
 	echo >&3 "<tr><th>Picture</th>"
 	echo >&3 "<th>Original</th>"
+
 	if $use_compressonator; then
 		echo >&3 "<th>Compressonator</th>"
 	fi
 	if $use_nvcompress; then
 		echo >&3 "<th>nvcompress</th>"
 	fi
+	echo >&3 "<th>rand64-sRGB-mixed</th>"
+	echo >&3 "<th>rand64-wavg</th>"
+	echo >&3 "<th>rand64-avg</th>"
+
 	if $use_libtxc_dxtn; then
 		echo >&3 "<th>libtxc_dxtn</th>"
 	fi
-	echo >&3 "<th>rand64-sRGB-mixed</th>"
-	echo >&3 "<th>rand64-wavg</th>"
 	echo >&3 "<th>norand-wavg</th>"
 	echo >&3 "<th>faster-wavg</th>"
-	echo >&3 "<th>rand64-avg</th>"
+
 	echo >&3 "</tr>"
 }
 html_rowstart()
@@ -132,14 +135,16 @@ for i in dxtfail base_concrete1a disabled floor_tile3a lift02 panel_ceil1a sunse
 		html "$i"-nvcompress.dds
 	fi
 
+	( S2TC_COLORDIST_MODE=SRGB_MIXED S2TC_RANDOM_COLORS=64 t "$i".tga "$i"-rand64-mrgb.dds ./s2tc )
+	( S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=64 t "$i".tga "$i"-rand64-wavg.dds ./s2tc )
+	( S2TC_COLORDIST_MODE=AVG        S2TC_RANDOM_COLORS=64 t "$i".tga "$i"-rand64-avg.dds  ./s2tc )
+
 	if $use_libtxc_dxtn; then
 		( LD_PRELOAD=/usr/lib/libtxc_dxtn.so           t "$i".tga "$i"-libtxc_dxtn.dds ./s2tc )
 	fi
-	( S2TC_COLORDIST_MODE=SRGB_MIXED S2TC_RANDOM_COLORS=64 t "$i".tga "$i"-rand64-mrgb.dds ./s2tc )
-	( S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=64 t "$i".tga "$i"-rand64-wavg.dds ./s2tc )
 	( S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=0  t "$i".tga "$i"-norand-wavg.dds ./s2tc )
+
 	( S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=-1 t "$i".tga "$i"-faster-wavg.dds ./s2tc )
-	( S2TC_COLORDIST_MODE=AVG        S2TC_RANDOM_COLORS=64 t "$i".tga "$i"-rand64-avg.dds  ./s2tc )
 
 	html_rowend
 done
