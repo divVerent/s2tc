@@ -183,7 +183,7 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 			refine = atoi(v);
 	}
 
-	s2tc_encode_block_func_t encode_block = s2tc_encode_block_func(dxt, cd, nrandom);
+	s2tc_encode_block_func_t encode_block = s2tc_encode_block_func(dxt, cd, nrandom, refine);
 	switch (destFormat) {
 		case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
 		case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:

@@ -28,7 +28,7 @@ typedef enum
 } ColorDistMode;
 
 typedef void (*s2tc_encode_block_func_t) (unsigned char *out, const unsigned char *rgba, int iw, int w, int h, int nrandom);
-s2tc_encode_block_func_t s2tc_encode_block_func(DxtMode dxt, ColorDistMode cd, int nrandom);
+s2tc_encode_block_func_t s2tc_encode_block_func(DxtMode dxt, ColorDistMode cd, int nrandom, bool refine);
 
 #ifdef __cplusplus
 }
