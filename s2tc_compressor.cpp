@@ -156,16 +156,32 @@ namespace
 
 	inline int color_dist_normalmap(const color_t &a, const color_t &b)
 	{
-		float ca[3], cb[3];
-		ca[0] = a.r / 31.0 * 2 - 1;
-		ca[1] = a.g / 63.0 * 2 - 1;
-		ca[2] = a.b / 31.0 * 2 - 1;
-		cb[0] = b.r / 31.0 * 2 - 1;
-		cb[1] = b.g / 63.0 * 2 - 1;
-		cb[2] = b.b / 31.0 * 2 - 1;
+		float ca[3], cb[3], n;
+		ca[0] = a.r / 31.0f * 2 - 1;
+		ca[1] = a.g / 63.0f * 2 - 1;
+		ca[2] = a.b / 31.0f * 2 - 1;
+		cb[0] = b.r / 31.0f * 2 - 1;
+		cb[1] = b.g / 63.0f * 2 - 1;
+		cb[2] = b.b / 31.0f * 2 - 1;
+		n = sqrt(ca[0] * ca[0] + ca[1] * ca[1] + ca[2] * ca[2]);
+		if(n > 0)
+		{
+			n = 1.0f / n;
+			ca[0] *= n;
+			ca[1] *= n;
+			ca[2] *= n;
+		}
+		n = sqrt(cb[0] * cb[0] + cb[1] * cb[1] + cb[2] * cb[2]);
+		if(n > 0)
+		{
+			n = 1.0f / n;
+			cb[0] *= n;
+			cb[1] *= n;
+			cb[2] *= n;
+		}
 
 		return
-			500 *
+			1000 *
 			(
 				(cb[0] - ca[0]) * (cb[0] - ca[0])
 				+
@@ -174,7 +190,7 @@ namespace
 				(cb[2] - ca[2]) * (cb[2] - ca[2])
 			)
 			;
-		// max value: 500 * (4 + 4 + 4) = 6000
+		// max value: 1000 * (4 + 4 + 4) = 6000
 	}
 
 	typedef int ColorDistFunc(const color_t &a, const color_t &b);
