@@ -628,6 +628,8 @@ namespace
 			}
 		if(refine != REFINE_NEVER)
 		{
+			// REFINEMENT: trick from libtxc_dxtn: reassign the colors to an average of the colors encoded with that value
+
 			if(dxt == DXT5)
 			{
 				if(refine == REFINE_CHECK)
