@@ -3,7 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <algorithm>
-#include "libtxc_dxtn.h"
+
+extern "C"
+{
+#include "txc_dxtn.h"
+};
 
 uint32_t LittleLong(uint32_t w)
 {

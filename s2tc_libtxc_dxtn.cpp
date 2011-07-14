@@ -1,4 +1,8 @@
-#include "libtxc_dxtn.h"
+extern "C"
+{
+#include "txc_dxtn.h"
+};
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -112,7 +116,7 @@ void fetch_2d_texel_rgba_dxt5(GLint srcRowStride, const GLubyte *pixdata,
 }
 
 void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
-		      const GLubyte *srcPixData, GLenum destFormat,
+		      const GLubyte *srcPixData, GLenum destformat,
 		      GLubyte *dest, GLint dstRowStride)
 {
 	// compresses width*height pixels (RGB or RGBA depending on srccomps) at srcPixData (packed) to destformat (dest, dstRowStride)
@@ -125,7 +129,7 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 	unsigned char *srcaddr;
 	DxtMode dxt;
 
-	switch (destFormat) {
+	switch (destformat) {
 		case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
 		case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
 			dxt = DXT1;
@@ -141,7 +145,7 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 			break;
 		default:
 			free(rgba);
-			fprintf(stderr, "libdxtn: Bad dstFormat %d in tx_compress_dxtn\n", destFormat);
+			fprintf(stderr, "libdxtn: Bad dstFormat %d in tx_compress_dxtn\n", destformat);
 			return;
 	}
 
@@ -193,7 +197,7 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 	}
 
 	s2tc_encode_block_func_t encode_block = s2tc_encode_block_func(dxt, cd, nrandom, refine);
-	switch (destFormat) {
+	switch (destformat) {
 		case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
 		case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
 			/* hmm we used to get called without dstRowStride... */

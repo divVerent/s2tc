@@ -5,8 +5,12 @@
 #include <stdint.h>
 #include <getopt.h>
 #include <algorithm>
-#include "libtxc_dxtn.h"
 #include "s2tc_common.h"
+
+extern "C"
+{
+#include "txc_dxtn.h"
+};
 
 /* START stuff that originates from image.c in DarkPlaces */
 // TODO CLEAR LICENSE STATE WITH LORDHAVOC, IF NEEDED, PUT THIS FILE UNDER GPL!
