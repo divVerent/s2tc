@@ -470,7 +470,7 @@ unsigned char *FS_LoadFile(const char *fn, int *len)
 		fclose(f);
 	return buf;
 }
-/* end of darkplaces stuff */
+/* END of darkplaces stuff */
 
 uint32_t LittleLong(uint32_t w)
 {
