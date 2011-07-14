@@ -99,7 +99,7 @@ namespace
 		// find luminance
 		int y = 37 * (r * 21*2*2 + g * 72 + b * 7*2*2); // multiplier: 14555800
 		// square root it (!)
-		y = sqrt(y); // now in range 0 to 3815
+		y = sqrtf(y) + 0.5f; // now in range 0 to 3815
 		return y;
 	}
 
@@ -307,6 +307,40 @@ namespace
 		MODE_FAST
 	};
 
+	template<ColorDistFunc ColorDist> inline int refine_component_encode(int comp)
+	{
+		return comp;
+	}
+	template<> inline int refine_component_encode<color_dist_srgb>(int comp)
+	{
+		return comp * comp;
+	}
+	template<> inline int refine_component_encode<color_dist_srgb_mixed>(int comp)
+	{
+		return comp * comp;
+	}
+	template<> inline int refine_component_encode<color_dist_lab_srgb>(int comp)
+	{
+		return comp * comp;
+	}
+
+	template<ColorDistFunc ColorDist> inline int refine_component_decode(int comp)
+	{
+		return comp;
+	}
+	template<> inline int refine_component_decode<color_dist_srgb>(int comp)
+	{
+		return sqrtf(comp) + 0.5f;
+	}
+	template<> inline int refine_component_decode<color_dist_srgb_mixed>(int comp)
+	{
+		return sqrtf(comp) + 0.5f;
+	}
+	template<> inline int refine_component_decode<color_dist_lab_srgb>(int comp)
+	{
+		return sqrtf(comp) + 0.5f;
+	}
+
 	template<DxtMode dxt, ColorDistFunc ColorDist, CompressionMode mode, bool refine>
 	inline void s2tc_encode_block(unsigned char *out, const unsigned char *rgba, int iw, int w, int h, int nrandom)
 	{
@@ -499,9 +533,9 @@ namespace
 							if(refine)
 							{
 								++nc1;
-								sc1r += c[2].r;
-								sc1g += c[2].g;
-								sc1b += c[2].b;
+								sc1r += refine_component_encode<ColorDist>(c[2].r);
+								sc1g += refine_component_encode<ColorDist>(c[2].g);
+								sc1b += refine_component_encode<ColorDist>(c[2].b);
 							}
 						}
 						else
@@ -509,9 +543,9 @@ namespace
 							if(refine)
 							{
 								++nc0;
-								sc0r += c[2].r;
-								sc0g += c[2].g;
-								sc0b += c[2].b;
+								sc0r += refine_component_encode<ColorDist>(c[2].r);
+								sc0g += refine_component_encode<ColorDist>(c[2].g);
+								sc0b += refine_component_encode<ColorDist>(c[2].b);
 							}
 						}
 						break;
@@ -527,9 +561,9 @@ namespace
 							if(refine)
 							{
 								++nc1;
-								sc1r += c[2].r;
-								sc1g += c[2].g;
-								sc1b += c[2].b;
+								sc1r += refine_component_encode<ColorDist>(c[2].r);
+								sc1g += refine_component_encode<ColorDist>(c[2].g);
+								sc1b += refine_component_encode<ColorDist>(c[2].b);
 							}
 						}
 						else
@@ -537,9 +571,9 @@ namespace
 							if(refine)
 							{
 								++nc0;
-								sc0r += c[2].r;
-								sc0g += c[2].g;
-								sc0b += c[2].b;
+								sc0r += refine_component_encode<ColorDist>(c[2].r);
+								sc0g += refine_component_encode<ColorDist>(c[2].g);
+								sc0b += refine_component_encode<ColorDist>(c[2].b);
 							}
 						}
 						break;
@@ -554,9 +588,9 @@ namespace
 								if(refine)
 								{
 									++nc1;
-									sc1r += c[2].r;
-									sc1g += c[2].g;
-									sc1b += c[2].b;
+									sc1r += refine_component_encode<ColorDist>(c[2].r);
+									sc1g += refine_component_encode<ColorDist>(c[2].g);
+									sc1b += refine_component_encode<ColorDist>(c[2].b);
 								}
 							}
 							else
@@ -564,9 +598,9 @@ namespace
 								if(refine)
 								{
 									++nc0;
-									sc0r += c[2].r;
-									sc0g += c[2].g;
-									sc0b += c[2].b;
+									sc0r += refine_component_encode<ColorDist>(c[2].r);
+									sc0g += refine_component_encode<ColorDist>(c[2].g);
+									sc0b += refine_component_encode<ColorDist>(c[2].b);
 								}
 							}
 						}
@@ -584,15 +618,15 @@ namespace
 			}
 			if(nc0)
 			{
-				c[0].r = (2 * sc0r + nc0) / (2 * nc0);
-				c[0].g = (2 * sc0g + nc0) / (2 * nc0);
-				c[0].b = (2 * sc0b + nc0) / (2 * nc0);
+				c[0].r = refine_component_decode<ColorDist>((2 * sc0r + nc0) / (2 * nc0));
+				c[0].g = refine_component_decode<ColorDist>((2 * sc0g + nc0) / (2 * nc0));
+				c[0].b = refine_component_decode<ColorDist>((2 * sc0b + nc0) / (2 * nc0));
 			}
 			if(nc1)
 			{
-				c[1].r = (2 * sc1r + nc1) / (2 * nc1);
-				c[1].g = (2 * sc1g + nc1) / (2 * nc1);
-				c[1].b = (2 * sc1b + nc1) / (2 * nc1);
+				c[1].r = refine_component_decode<ColorDist>((2 * sc1r + nc1) / (2 * nc1));
+				c[1].g = refine_component_decode<ColorDist>((2 * sc1g + nc1) / (2 * nc1));
+				c[1].b = refine_component_decode<ColorDist>((2 * sc1b + nc1) / (2 * nc1));
 			}
 
 			if(dxt == DXT5)
