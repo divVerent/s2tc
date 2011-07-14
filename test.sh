@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -ex
+set -e
 
 CXX="g++ -Wall -Wextra -O3"
 make clean all
@@ -75,16 +75,26 @@ html_rowstart()
 {
 	echo >&3 "<tr><th>$1</th>"
 	deltatime=
+	deltatime_raw=0
+	col=0
 }
 html()
 {
 	convert "$1" -crop 256x256+192+128 "html/$1.png"
 	echo >&3 "<td><img src=\"$1.png\" alt=\"$1\" title=\"$1$deltatime\"></td>"
+	eval "prevdeltatime=\$deltatime_$col"
+	prevdeltatime=`echo "($prevdeltatime-0)+$deltatime_raw" | bc`
+	eval "deltatime_$col=\$prevdeltatime"
+	col=$(($col+1))
 }
 html2()
 {
 	./s2tc_decompress < "$1" | convert TGA:- -crop 256x256+192+128 "html/$1-s2tc.png"
 	echo >&3 "<td><img src=\"$1-s2tc.png\" alt=\"$1\" title=\"$1$deltatime\"></td>"
+	eval "prevdeltatime=\$deltatime_$col"
+	prevdeltatime=`echo "($prevdeltatime-0)+$deltatime_raw" | bc`
+	eval "deltatime_$col=\$prevdeltatime"
+	col=$(($col+1))
 }
 html_rowend()
 {
@@ -92,6 +102,15 @@ html_rowend()
 }
 html_end()
 {
+	echo >&3 "<tr><th>Total runtime</th><td>(original)</td>"
+	col=1
+	while :; do
+		eval "prevdeltatime=\$deltatime_$col"
+		[ -n "$prevdeltatime" ] || break
+		deltatime=`echo "scale=3; $prevdeltatime / 1000000000" | bc -l`
+		echo >&3 "<td>$deltatime seconds</td>"
+		col=$(($col+1))
+	done
 	echo >&3 "</table></body></html>"
 }
 
@@ -100,7 +119,8 @@ timing()
 	t0=`date +%s%N`
 	"$@"
 	t1=`date +%s%N`
-	deltatime=`echo "scale=3; ($t1 - $t0) / 1000000000" | bc -l`
+	deltatime_raw=`echo "$t1 - $t0" | bc`
+	deltatime=`echo "scale=3; $deltatime_raw / 1000000000" | bc -l`
 	deltatime=" ($deltatime seconds)"
 }
 
@@ -145,15 +165,15 @@ for i in dxtfail fract001 base_concrete1a disabled floor_tile3a lift02 panel_cei
 		html "$i"-nvcompress.dds
 	fi
 
-	( S2TC_COLORDIST_MODE=SRGB_MIXED S2TC_RANDOM_COLORS=64 S2TC_REFINE_COLORS=CHECK  t "$i".tga "$i"-rand64-mrgb-r.dds ./s2tc )
-	( S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=64 S2TC_REFINE_COLORS=CHECK  t "$i".tga "$i"-rand64-wavg-r.dds ./s2tc )
-	( S2TC_COLORDIST_MODE=AVG        S2TC_RANDOM_COLORS=64 S2TC_REFINE_COLORS=CHECK  t "$i".tga "$i"-rand64-avg-r.dds  ./s2tc )
-
+	S2TC_COLORDIST_MODE=SRGB_MIXED S2TC_RANDOM_COLORS=64 S2TC_REFINE_COLORS=CHECK  t "$i".tga "$i"-rand64-mrgb-r.dds ./s2tc
+	S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=64 S2TC_REFINE_COLORS=CHECK  t "$i".tga "$i"-rand64-wavg-r.dds ./s2tc
+	S2TC_COLORDIST_MODE=AVG        S2TC_RANDOM_COLORS=64 S2TC_REFINE_COLORS=CHECK  t "$i".tga "$i"-rand64-avg-r.dds  ./s2tc
 	if $use_libtxc_dxtn; then
-		( LD_PRELOAD=/usr/lib/libtxc_dxtn.so                                     t "$i".tga "$i"-libtxc_dxtn.dds ./s2tc )
+		LD_PRELOAD=/usr/lib/libtxc_dxtn.so                                     t "$i".tga "$i"-libtxc_dxtn.dds ./s2tc
+		unset LD_PRELOAD
 	fi
-	( S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=0  S2TC_REFINE_COLORS=ALWAYS t "$i".tga "$i"-norand-wavg-r.dds ./s2tc )
-	( S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=-1 S2TC_REFINE_COLORS=ALWAYS t "$i".tga "$i"-faster-wavg-r.dds ./s2tc )
+	S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=0  S2TC_REFINE_COLORS=ALWAYS t "$i".tga "$i"-norand-wavg-r.dds ./s2tc
+	S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=-1 S2TC_REFINE_COLORS=ALWAYS t "$i".tga "$i"-faster-wavg-r.dds ./s2tc
 
 	html_rowend
 done
