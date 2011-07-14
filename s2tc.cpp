@@ -13,7 +13,15 @@ extern "C"
 };
 
 /* START stuff that originates from image.c in DarkPlaces */
-// TODO CLEAR LICENSE STATE WITH LORDHAVOC, IF NEEDED, PUT THIS FILE UNDER GPL!
+/*
+	Thu Jul 14 21:58:02 CEST 2011
+	21:25:25        @divVerent | LordHavoc: http://paste.pocoo.org/show/438804/
+	21:25:31        @divVerent | can I have this code under a MIT-style license?
+	21:59:58        @LordHavoc | divVerent: yeah, have them under any license you want
+	22:00:11        @LordHavoc | divVerent: my attitude toward licenses is generally "WTFPL would be preferably if I could use it" :P
+	22:04:01        @divVerent | LordHavoc: okay, thanks
+*/
+
 int image_width, image_height;
 
 typedef struct _TargaHeader
