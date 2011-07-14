@@ -59,9 +59,9 @@ EOF
 	if $use_nvcompress; then
 		echo >&3 "<th>nvcompress</th>"
 	fi
-	echo >&3 "<th>rand64-sRGB-mixed</th>"
-	echo >&3 "<th>rand64-wavg</th>"
-	echo >&3 "<th>rand64-avg</th>"
+	echo >&3 "<th>rand32-sRGB-mixed</th>"
+	echo >&3 "<th>rand32-wavg</th>"
+	echo >&3 "<th>rand32-avg</th>"
 
 	if $use_libtxc_dxtn; then
 		echo >&3 "<th>libtxc_dxtn</th>"
@@ -130,7 +130,6 @@ t()
 	out=$1; shift
 	timing "$@" < "$in" > "$out"
 	html "$out"
-	echo "$LD_PRELOAD"
 }
 
 if which nvcompress >/dev/null 2>&1; then
@@ -165,9 +164,9 @@ for i in dxtfail fract001 base_concrete1a disabled floor_tile3a lift02 panel_cei
 		html "$i"-nvcompress.dds
 	fi
 
-	S2TC_COLORDIST_MODE=SRGB_MIXED S2TC_RANDOM_COLORS=64 S2TC_REFINE_COLORS=CHECK  t "$i".tga "$i"-rand64-mrgb-r.dds ./s2tc
-	S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=64 S2TC_REFINE_COLORS=CHECK  t "$i".tga "$i"-rand64-wavg-r.dds ./s2tc
-	S2TC_COLORDIST_MODE=AVG        S2TC_RANDOM_COLORS=64 S2TC_REFINE_COLORS=CHECK  t "$i".tga "$i"-rand64-avg-r.dds  ./s2tc
+	S2TC_COLORDIST_MODE=SRGB_MIXED S2TC_RANDOM_COLORS=32 S2TC_REFINE_COLORS=CHECK  t "$i".tga "$i"-rand32-mrgb-r.dds ./s2tc
+	S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=32 S2TC_REFINE_COLORS=CHECK  t "$i".tga "$i"-rand32-wavg-r.dds ./s2tc
+	S2TC_COLORDIST_MODE=AVG        S2TC_RANDOM_COLORS=32 S2TC_REFINE_COLORS=CHECK  t "$i".tga "$i"-rand32-avg-r.dds  ./s2tc
 	if $use_libtxc_dxtn; then
 		LD_PRELOAD=/usr/lib/libtxc_dxtn.so                                     t "$i".tga "$i"-libtxc_dxtn.dds ./s2tc
 		unset LD_PRELOAD
