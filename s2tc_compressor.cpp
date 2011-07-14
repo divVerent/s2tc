@@ -304,11 +304,10 @@ namespace
 	{
 		MODE_NORMAL,
 		MODE_RANDOM,
-		MODE_FAST,
-		MODE_SUPERFAST
+		MODE_FAST
 	};
 
-	template<DxtMode dxt, ColorDistFunc ColorDist, CompressionMode mode>
+	template<DxtMode dxt, ColorDistFunc ColorDist, CompressionMode mode, bool refine>
 	inline void s2tc_encode_block(unsigned char *out, const unsigned char *rgba, int iw, int w, int h, int nrandom)
 	{
 		color_t c[16 + (mode == MODE_RANDOM ? nrandom : 0)];
@@ -317,7 +316,7 @@ namespace
 		int n = 0, m = 0;
 		int x, y;
 
-		if(mode == MODE_FAST || mode == MODE_SUPERFAST)
+		if(mode == MODE_FAST)
 		{
 			color_t c0 = {0, 0, 0};
 
@@ -415,7 +414,7 @@ namespace
 				reduce_colors_inplace_2fixpoints(ca, n, n, alpha_dist, (unsigned char) 0, (unsigned char) 255);
 		}
 
-		if(mode != MODE_FAST)
+		if(!refine)
 		{
 			if(dxt == DXT5)
 			{
@@ -476,7 +475,7 @@ namespace
 							else if(da[0] <= da[1])
 							{
 								// 0
-								if(mode == MODE_FAST)
+								if(refine)
 								{
 									++na0;
 									sa0 += ca[2];
@@ -486,7 +485,7 @@ namespace
 							{
 								// 1
 								out[bitindex / 8 + 2] |= (1 << (bitindex % 8));
-								if(mode == MODE_FAST)
+								if(refine)
 								{
 									++na1;
 									sa1 += ca[2];
@@ -497,7 +496,7 @@ namespace
 						{
 							int bitindex = pindex * 2;
 							out[bitindex / 8 + 12] |= (1 << (bitindex % 8));
-							if(mode == MODE_FAST)
+							if(refine)
 							{
 								++nc1;
 								sc1r += c[2].r;
@@ -507,7 +506,7 @@ namespace
 						}
 						else
 						{
-							if(mode == MODE_FAST)
+							if(refine)
 							{
 								++nc0;
 								sc0r += c[2].r;
@@ -525,7 +524,7 @@ namespace
 						{
 							int bitindex = pindex * 2;
 							out[bitindex / 8 + 12] |= (1 << (bitindex % 8));
-							if(mode == MODE_FAST)
+							if(refine)
 							{
 								++nc1;
 								sc1r += c[2].r;
@@ -535,7 +534,7 @@ namespace
 						}
 						else
 						{
-							if(mode == MODE_FAST)
+							if(refine)
 							{
 								++nc0;
 								sc0r += c[2].r;
@@ -552,7 +551,7 @@ namespace
 							else if(ColorDist(c[0], c[2]) > ColorDist(c[1], c[2]))
 							{
 								out[bitindex / 8 + 4] |= (1 << (bitindex % 8));
-								if(mode == MODE_FAST)
+								if(refine)
 								{
 									++nc1;
 									sc1r += c[2].r;
@@ -562,7 +561,7 @@ namespace
 							}
 							else
 							{
-								if(mode == MODE_FAST)
+								if(refine)
 								{
 									++nc0;
 									sc0r += c[2].r;
@@ -574,7 +573,7 @@ namespace
 						break;
 				}
 			}
-		if(mode == MODE_FAST)
+		if(refine)
 		{
 			if(dxt == DXT5)
 			{
@@ -656,66 +655,73 @@ namespace
 	}
 
 	// compile time dispatch magic
+	template<DxtMode dxt, ColorDistFunc ColorDist, CompressionMode mode>
+	inline s2tc_encode_block_func_t s2tc_encode_block_func(bool refine)
+	{
+		if(refine)
+			return s2tc_encode_block<dxt, ColorDist, mode, true>;
+		else
+			return s2tc_encode_block<dxt, ColorDist, mode, false>;
+	}
+
 	template<DxtMode dxt, ColorDistFunc ColorDist>
-	inline s2tc_encode_block_func_t s2tc_encode_block_func(int nrandom)
+	inline s2tc_encode_block_func_t s2tc_encode_block_func(int nrandom, bool refine)
 	{
 		if(nrandom > 0)
-			return s2tc_encode_block<dxt, ColorDist, MODE_RANDOM>;
+			return s2tc_encode_block_func<dxt, ColorDist, MODE_RANDOM>(refine);
 		else if(nrandom == 0)
-			return s2tc_encode_block<dxt, ColorDist, MODE_NORMAL>;
-		else if(nrandom == -1)
-			return s2tc_encode_block<dxt, ColorDist, MODE_FAST>;
-		else // if(nrandom < -1)
-			return s2tc_encode_block<dxt, ColorDist, MODE_SUPERFAST>;
+			return s2tc_encode_block_func<dxt, ColorDist, MODE_NORMAL>(refine);
+		else
+			return s2tc_encode_block_func<dxt, ColorDist, MODE_FAST>(refine);
 	}
 
 	template<ColorDistFunc ColorDist>
-	inline s2tc_encode_block_func_t s2tc_encode_block_func(DxtMode dxt, int nrandom)
+	inline s2tc_encode_block_func_t s2tc_encode_block_func(DxtMode dxt, int nrandom, bool refine)
 	{
 		switch(dxt)
 		{
 			case DXT1:
-				return s2tc_encode_block_func<DXT1, ColorDist>(nrandom);
+				return s2tc_encode_block_func<DXT1, ColorDist>(nrandom, refine);
 				break;
 			case DXT3:
-				return s2tc_encode_block_func<DXT3, ColorDist>(nrandom);
+				return s2tc_encode_block_func<DXT3, ColorDist>(nrandom, refine);
 				break;
 			default:
 			case DXT5:
-				return s2tc_encode_block_func<DXT5, ColorDist>(nrandom);
+				return s2tc_encode_block_func<DXT5, ColorDist>(nrandom, refine);
 				break;
 		}
 	}
 };
 
-s2tc_encode_block_func_t s2tc_encode_block_func(DxtMode dxt, ColorDistMode cd, int nrandom)
+s2tc_encode_block_func_t s2tc_encode_block_func(DxtMode dxt, ColorDistMode cd, int nrandom, bool refine)
 {
 	switch(cd)
 	{
 		case RGB:
-			return s2tc_encode_block_func<color_dist_rgb>(dxt, nrandom);
+			return s2tc_encode_block_func<color_dist_rgb>(dxt, nrandom, refine);
 			break;
 		case YUV:
-			return s2tc_encode_block_func<color_dist_yuv>(dxt, nrandom);
+			return s2tc_encode_block_func<color_dist_yuv>(dxt, nrandom, refine);
 			break;
 		case SRGB:
-			return s2tc_encode_block_func<color_dist_srgb>(dxt, nrandom);
+			return s2tc_encode_block_func<color_dist_srgb>(dxt, nrandom, refine);
 			break;
 		case SRGB_MIXED:
-			return s2tc_encode_block_func<color_dist_srgb_mixed>(dxt, nrandom);
+			return s2tc_encode_block_func<color_dist_srgb_mixed>(dxt, nrandom, refine);
 			break;
 		case LAB:
-			return s2tc_encode_block_func<color_dist_lab_srgb>(dxt, nrandom);
+			return s2tc_encode_block_func<color_dist_lab_srgb>(dxt, nrandom, refine);
 			break;
 		case AVG:
-			return s2tc_encode_block_func<color_dist_avg>(dxt, nrandom);
+			return s2tc_encode_block_func<color_dist_avg>(dxt, nrandom, refine);
 			break;
 		default:
 		case WAVG:
-			return s2tc_encode_block_func<color_dist_wavg>(dxt, nrandom);
+			return s2tc_encode_block_func<color_dist_wavg>(dxt, nrandom, refine);
 			break;
 		case NORMALMAP:
-			return s2tc_encode_block_func<color_dist_normalmap>(dxt, nrandom);
+			return s2tc_encode_block_func<color_dist_normalmap>(dxt, nrandom, refine);
 			break;
 	}
 }

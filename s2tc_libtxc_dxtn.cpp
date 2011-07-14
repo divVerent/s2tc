@@ -147,6 +147,7 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 
 	ColorDistMode cd = WAVG;
 	int nrandom = -1;
+	bool refine = true;
 	{
 		const char *v = getenv("S2TC_COLORDIST_MODE");
 		if(v)
@@ -175,6 +176,11 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 		const char *v = getenv("S2TC_RANDOM_COLORS");
 		if(v)
 			nrandom = atoi(v);
+	}
+	{
+		const char *v = getenv("S2TC_REFINE_COLORS");
+		if(v)
+			refine = atoi(v);
 	}
 
 	s2tc_encode_block_func_t encode_block = s2tc_encode_block_func(dxt, cd, nrandom);

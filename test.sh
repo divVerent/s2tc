@@ -140,7 +140,7 @@ for i in dxtfail base_concrete1a disabled floor_tile3a lift02 panel_ceil1a sunse
 	( S2TC_COLORDIST_MODE=AVG        S2TC_RANDOM_COLORS=64 t "$i".tga "$i"-rand64-avg.dds  ./s2tc )
 
 	if $use_libtxc_dxtn; then
-		( LD_PRELOAD=/usr/lib/libtxc_dxtn.so           t "$i".tga "$i"-libtxc_dxtn.dds ./s2tc )
+		( LD_PRELOAD=/usr/lib/libtxc_dxtn.so                                t "$i".tga "$i"-libtxc_dxtn.dds ./s2tc )
 	fi
 	( S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=0  t "$i".tga "$i"-norand-wavg.dds ./s2tc )
 
