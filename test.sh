@@ -53,10 +53,9 @@ EOF
 	echo >&3 "<tr><th>Picture</th>"
 	echo >&3 "<th>Original</th>"
 	echo >&3 "<th>nvcompress</th>"
-	echo >&3 "<th>nvcompress (S2TC)</th>"
+	echo >&3 "<th>Compressonator</th>"
+	echo >&3 "<th>libtxc_dxtn</th>"
 	echo >&3 "<th>rand64-sRGB-mixed</th>"
-	echo >&3 "<th>norand-sRGB-mixed</th>"
-	echo >&3 "<th>faster-sRGB-mixed</th>"
 	echo >&3 "<th>rand64-wavg</th>"
 	echo >&3 "<th>norand-wavg</th>"
 	echo >&3 "<th>faster-wavg</th>"
@@ -92,6 +91,7 @@ t()
 	out=$1; shift
 	time "$@" < "$in" > "$out"
 	html "$out"
+	echo "$LD_PRELOAD"
 }
 
 html_start
@@ -100,17 +100,20 @@ for i in dxtfail base_concrete1a disabled floor_tile3a lift02 panel_ceil1a sunse
 
 	html "$i".tga
 
-	nvcompress "$i".tga "$i".dds
-	html "$i".dds
-	html2 "$i".dds
+	time nvcompress "$i".tga "$i"_nvcompress.dds
+	html "$i"_nvcompress.dds
 
+	time wine "c:/Program Files (x86)/AMD/The Compressonator 1.50/TheCompressonator.exe" -convert -overwrite -mipmaps "$i".tga "$i"_amdcompress.dds -codec ATIC.dll +fourCC DXT1 -mipper BoxFilter.dll
+	html "$i"_amdcompress.dds
+
+	export LD_PRELOAD=/usr/lib/libtxc_dxtn.so
+	                                                     t "$i".tga "$i"-libtxc_dxtn.dds ./s2tc
+	unset LD_PRELOAD
 	S2TC_COLORDIST_MODE=SRGB_MIXED S2TC_RANDOM_COLORS=64 t "$i".tga "$i"-rand64-mrgb.dds ./s2tc
-	S2TC_COLORDIST_MODE=SRGB_MIXED S2TC_RANDOM_COLORS=0  t "$i".tga "$i"-norand-mrgb.dds ./s2tc
-	S2TC_COLORDIST_MODE=SRGB_MIXED S2TC_RANDOM_COLORS=-1 t "$i".tga "$i"-faster-mrgb.dds ./s2tc
 	S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=64 t "$i".tga "$i"-rand64-wavg.dds ./s2tc
 	S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=0  t "$i".tga "$i"-norand-wavg.dds ./s2tc
 	S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=-1 t "$i".tga "$i"-faster-wavg.dds ./s2tc
-	S2TC_COLORDIST_MODE=AVG        S2TC_RANDOM_COLORS=-1 t "$i".tga "$i"-norand-avg.dds  ./s2tc
+	S2TC_COLORDIST_MODE=AVG        S2TC_RANDOM_COLORS=0  t "$i".tga "$i"-norand-avg.dds  ./s2tc
 
 	html_rowend
 done
