@@ -9,6 +9,7 @@
 #include "s2tc_common.h"
 
 /* START stuff that originates from image.c in DarkPlaces */
+// TODO CLEAR LICENSE STATE WITH LORDHAVOC, IF NEEDED, PUT THIS FILE UNDER GPL!
 int image_width, image_height;
 
 typedef struct _TargaHeader
