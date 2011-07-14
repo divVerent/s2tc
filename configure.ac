@@ -4,6 +4,6 @@ AM_INIT_AUTOMAKE([-Wall foreign])
 AC_PROG_CXX
 AC_PROG_LIBTOOL
 
-AC_CONFIG_FILES([Makefile libtxc_dxtn.pc])
+AC_CONFIG_FILES([Makefile txc_dxtn.pc])
 
 AC_OUTPUT

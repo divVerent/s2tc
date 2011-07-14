@@ -12,9 +12,9 @@ libtxc_dxtn_la_LDFLAGS = -versioninfo 0:0:0
 libtxc_dxtn_la_CFLAGS = -fvisibility=hidden -Wold-style-definition -Wstrict-prototypes -Wsign-compare -Wdeclaration-after-statement
 
 library_includedir = $(includedir)
-library_include_HEADERS = libtxc_dxtn.h
+library_include_HEADERS = txc_dxtn.h
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_HEADERS = libtxc_dxtn.pc
+pkgconfig_HEADERS = txc_dxtn.pc
 
 # versioninfo:
 #   - compatible interface change: c:r:a -> c+1:0:a+1
