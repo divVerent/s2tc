@@ -369,6 +369,8 @@ namespace
 
 		if(mode == MODE_FAST)
 		{
+			// FAST: trick from libtxc_dxtn: just get brightest and darkest colors, and encode using these
+
 			color_t c0 = {0, 0, 0};
 
 			c[0].r = rgba[2];
@@ -778,7 +780,7 @@ namespace
 	{
 		if(nrandom > 0)
 			return s2tc_encode_block_func<dxt, ColorDist, MODE_RANDOM>(refine);
-		else if(nrandom == 0)
+		else if(nrandom == 0 || ColorDist == color_dist_normalmap) // MODE_FAST not supported for normalmaps, sorry
 			return s2tc_encode_block_func<dxt, ColorDist, MODE_NORMAL>(refine);
 		else
 			return s2tc_encode_block_func<dxt, ColorDist, MODE_FAST>(refine);

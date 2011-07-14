@@ -74,16 +74,17 @@ EOF
 html_rowstart()
 {
 	echo >&3 "<tr><th>$1</th>"
+	deltatime=
 }
 html()
 {
 	convert "$1" -crop 256x256+192+128 "html/$1.png"
-	echo >&3 "<td><img src=\"$1.png\" alt=\"$1\"></td>"
+	echo >&3 "<td><img src=\"$1.png\" alt=\"$1\" title=\"$1$deltatime\"></td>"
 }
 html2()
 {
 	./s2tc_decompress < "$1" | convert TGA:- -crop 256x256+192+128 "html/$1-s2tc.png"
-	echo >&3 "<td><img src=\"$1-s2tc.png\" alt=\"$1\"></td>"
+	echo >&3 "<td><img src=\"$1-s2tc.png\" alt=\"$1\" title=\"$1$deltatime\"></td>"
 }
 html_rowend()
 {
@@ -94,11 +95,20 @@ html_end()
 	echo >&3 "</table></body></html>"
 }
 
+timing()
+{
+	t0=`date +%s%N`
+	"$@"
+	t1=`date +%s%N`
+	deltatime=`echo "scale=3; ($t1 - $t0) / 1000000000" | bc -l`
+	deltatime=" ($deltatime seconds)"
+}
+
 t()
 {
 	in=$1; shift
 	out=$1; shift
-	time "$@" < "$in" > "$out"
+	timing "$@" < "$in" > "$out"
 	html "$out"
 	echo "$LD_PRELOAD"
 }
@@ -126,12 +136,12 @@ for i in dxtfail fract001 base_concrete1a disabled floor_tile3a lift02 panel_cei
 	html "$i".tga
 
 	if $use_compressonator; then
-		time wine "c:/Program Files (x86)/AMD/The Compressonator 1.50/TheCompressonator.exe" -convert -overwrite -mipmaps "$i".tga "$i"-amdcompress.dds -codec DXTC.dll +fourCC DXT1 -mipper BoxFilter.dll
+		timing wine "c:/Program Files (x86)/AMD/The Compressonator 1.50/TheCompressonator.exe" -convert -overwrite -mipmaps "$i".tga "$i"-amdcompress.dds -codec DXTC.dll +fourCC DXT1 -mipper BoxFilter.dll
 		html "$i"-amdcompress.dds
 	fi
 
 	if $use_nvcompress; then
-		time nvcompress "$i".tga "$i"-nvcompress.dds
+		timing nvcompress "$i".tga "$i"-nvcompress.dds
 		html "$i"-nvcompress.dds
 	fi
 
@@ -140,7 +150,7 @@ for i in dxtfail fract001 base_concrete1a disabled floor_tile3a lift02 panel_cei
 	( S2TC_COLORDIST_MODE=AVG        S2TC_RANDOM_COLORS=64 S2TC_REFINE_COLORS=CHECK  t "$i".tga "$i"-rand64-avg-r.dds  ./s2tc )
 
 	if $use_libtxc_dxtn; then
-		( LD_PRELOAD=/usr/lib/libtxc_dxtn.so                                t "$i".tga "$i"-libtxc_dxtn.dds ./s2tc )
+		( LD_PRELOAD=/usr/lib/libtxc_dxtn.so                                     t "$i".tga "$i"-libtxc_dxtn.dds ./s2tc )
 	fi
 	( S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=0  S2TC_REFINE_COLORS=ALWAYS t "$i".tga "$i"-norand-wavg-r.dds ./s2tc )
 	( S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=-1 S2TC_REFINE_COLORS=ALWAYS t "$i".tga "$i"-faster-wavg-r.dds ./s2tc )
