@@ -2,8 +2,6 @@
 
 set -e
 
-mkdir -p html
-exec 3>html/index.html
 cd ..
 git clean -xdf
 sh autogen.sh
@@ -11,6 +9,9 @@ sh autogen.sh
 make
 make install
 cd tests
+
+mkdir -p html
+exec 3>html/index.html
 
 html_start()
 {
