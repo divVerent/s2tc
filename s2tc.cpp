@@ -507,7 +507,6 @@ int main(int argc, char **argv)
 	GLenum dxt = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
 	const char *infile = NULL, *outfile = NULL;
 	FILE *outfh;
-	char buf[80];
 
 	int opt;
 	while((opt = getopt(argc, argv, "i:o:t:r:c:")) != -1)
