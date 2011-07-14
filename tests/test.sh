@@ -5,7 +5,7 @@ set -e
 cd ..
 git clean -xdf
 sh autogen.sh
-./configure --prefix="`pwd`/tests"
+./configure --prefix="`pwd`/tests" CXXFLAGS="-O3"
 make
 make install
 cd tests
