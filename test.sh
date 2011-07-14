@@ -100,11 +100,11 @@ for i in dxtfail base_concrete1a disabled floor_tile3a lift02 panel_ceil1a sunse
 
 	html "$i".tga
 
-	time wine "c:/Program Files (x86)/AMD/The Compressonator 1.50/TheCompressonator.exe" -convert -overwrite -mipmaps "$i".tga "$i"_amdcompress.dds -codec ATIC.dll +fourCC DXT1 -mipper BoxFilter.dll
-	html "$i"_amdcompress.dds
+	time wine "c:/Program Files (x86)/AMD/The Compressonator 1.50/TheCompressonator.exe" -convert -overwrite -mipmaps "$i".tga "$i"-amdcompress.dds -codec ATIC.dll +fourCC DXT1 -mipper BoxFilter.dll
+	html "$i"-amdcompress.dds
 
-	time nvcompress "$i".tga "$i"_nvcompress.dds
-	html "$i"_nvcompress.dds
+	time nvcompress "$i".tga "$i"-nvcompress.dds
+	html "$i"-nvcompress.dds
 
 	export LD_PRELOAD=/usr/lib/libtxc_dxtn.so
 	                                                     t "$i".tga "$i"-libtxc_dxtn.dds ./s2tc
