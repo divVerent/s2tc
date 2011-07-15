@@ -434,6 +434,8 @@ namespace
 			{
 				color_t mins = c[0];
 				color_t maxs = c[0];
+				unsigned char mina = (dxt == DXT5) ? ca[0] : 0;
+				unsigned char maxa = (dxt == DXT5) ? ca[0] : 0;
 				for(x = 1; x < n; ++x)
 				{
 					mins.r = min(mins.r, c[x].r);
@@ -442,13 +444,21 @@ namespace
 					maxs.r = max(maxs.r, c[x].r);
 					maxs.g = max(maxs.g, c[x].g);
 					maxs.b = max(maxs.b, c[x].b);
+					if(dxt == DXT5)
+					{
+						mina = min(mina, ca[x]);
+						maxa = max(maxa, ca[x]);
+					}
 				}
 				color_t len = { maxs.r - mins.r + 1, maxs.g - mins.g + 1, maxs.b - mins.b + 1 };
+				int lena = (dxt == DXT5) ? (maxa - (int) mina + 1) : 0;
 				for(x = 0; x < nrandom; ++x)
 				{
 					c[m].r = mins.r + rand() % len.r;
 					c[m].g = mins.g + rand() % len.g;
 					c[m].b = mins.b + rand() % len.b;
+					if(dxt == DXT5)
+						ca[m] = mina + rand() % lena;
 					++m;
 				}
 			}
@@ -464,7 +474,7 @@ namespace
 
 			reduce_colors_inplace(c, n, m, ColorDist);
 			if(dxt == DXT5)
-				reduce_colors_inplace_2fixpoints(ca, n, n, alpha_dist, (unsigned char) 0, (unsigned char) 255);
+				reduce_colors_inplace_2fixpoints(ca, n, m, alpha_dist, (unsigned char) 0, (unsigned char) 255);
 		}
 
 		if(refine == REFINE_NEVER)

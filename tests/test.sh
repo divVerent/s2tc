@@ -181,7 +181,8 @@ xon()
 # floor_tread01: GPLv2+
 xon textures/exx/floor/floor_tread01.tga floor_tread01.tga
 # floor_tread01_norm: GPLv2+
-xon textures/exx/floor/floor_tread01_norm.tga floor_tread01_norm.tga
+xon textures/exx/floor/floor_tread01_norm.tga floor_tread01_norm_dxt3.tga
+xon textures/exx/floor/floor_tread01_norm.tga floor_tread01_norm_dxt5.tga
 # base_concrete1a: GPLv2+
 xon textures/trak4x/base/base_concrete1a.tga base_concrete1a.tga
 # disabled: GPLv2+
@@ -204,9 +205,13 @@ for i in dxtfail floor_tread01 floor_tread01_norm fract001 base_concrete1a disab
 	html "$i".tga
 
 	case "$i" in
-		*_norm)
+		*_dxt5)
 			fourcc=DXT5
 			nvopts="-bc3 -alpha"
+			;;
+		*_dxt3)
+			fourcc=DXT3
+			nvopts="-bc2 -alpha"
 			;;
 		*)
 			fourcc=DXT1
