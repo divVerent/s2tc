@@ -221,6 +221,10 @@ for i in dxtfail floor_tread01 floor_tread01_norm_dxt5 floor_tread01_norm_dxt3 f
 			fourcc=DXT3
 			nvopts="-bc2 -alpha"
 			;;
+		*_dxt1)
+			fourcc=DXT1
+			nvopts="-bc1a -alpha"
+			;;
 		*)
 			fourcc=DXT1
 			nvopts="-bc1"
