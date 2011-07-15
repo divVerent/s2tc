@@ -83,9 +83,22 @@ html_rowstart()
 	deltatime_raw=0
 	col=0
 }
+
+decompress()
+{
+	if $use_libtxc_dxtn; then
+		LD_PRELOAD=/usr/lib/libtxc_dxtn.so bin/s2tc_decompress < "$1"
+	elif use_nvcompress; then
+		nvdecompress "$1"
+	else
+		# this has bugs with alpha channels
+		convert "$1" TGA:-
+	fi
+}
+
 html()
 {
-	convert "$1" -crop 256x256+192+128 "html/$1.png"
+	decompress "$1" | convert TGA:- -crop 256x256+192+128 "html/$1.png"
 	echo >&3 "<td><img src=\"$1.png\" alt=\"$1\" title=\"$1$deltatime\"></td>"
 	eval "prevdeltatime=\$deltatime_$col"
 	prevdeltatime=`echo "($prevdeltatime-0)+$deltatime_raw" | bc`
