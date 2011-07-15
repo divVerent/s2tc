@@ -390,6 +390,10 @@ namespace
 					c[2].r = rgba[(x + y * iw) * 4 + 2];
 					c[2].g = rgba[(x + y * iw) * 4 + 1];
 					c[2].b = rgba[(x + y * iw) * 4 + 0];
+					ca[2]  = rgba[(x + y * iw) * 4 + 3];
+					if(ColorDist != color_dist_normalmap)
+						if(!ca[2])
+							continue;
 
 					int d = ColorDist(c[2], c0);
 					if(d > dmax)
@@ -405,7 +409,6 @@ namespace
 
 					if(dxt == DXT5)
 					{
-						ca[2]  = rgba[(x + y * iw) * 4 + 3];
 						if(ca[2] > ca[1])
 							ca[1] = ca[2];
 						if(ca[2] < ca[0])
@@ -420,13 +423,23 @@ namespace
 			for(x = 0; x < w; ++x)
 				for(y = 0; y < h; ++y)
 				{
+					ca[n]  = rgba[(x + y * iw) * 4 + 3];
+					if(ColorDist != color_dist_normalmap)
+						if(!ca[n])
+							continue;
 					c[n].r = rgba[(x + y * iw) * 4 + 2];
 					c[n].g = rgba[(x + y * iw) * 4 + 1];
 					c[n].b = rgba[(x + y * iw) * 4 + 0];
-					if(dxt == DXT5)
-						ca[n]  = rgba[(x + y * iw) * 4 + 3];
 					++n;
 				}
+			if(n == 0)
+			{
+				n = 1;
+				c[0].r = 0;
+				c[0].g = 0;
+				c[0].b = 0;
+				ca[0] = 0;
+			}
 			m = n;
 
 			if(mode == MODE_RANDOM)
@@ -519,6 +532,7 @@ namespace
 					{
 						case DXT5:
 							{
+								bool visible = true;
 								int da[4];
 								int bitindex = pindex * 3;
 								da[0] = alpha_dist(ca[0], ca[2]);
@@ -532,6 +546,8 @@ namespace
 									out[bitindex / 8 + 2] |= (1 << (bitindex % 8));
 									++bitindex;
 									out[bitindex / 8 + 2] |= (1 << (bitindex % 8));
+									if(ColorDist != color_dist_normalmap)
+										visible = false;
 								}
 								else if(da[3] <= da[0] && da[3] <= da[1])
 								{
@@ -561,27 +577,33 @@ namespace
 										sa1 += ca[2];
 									}
 								}
-							}
-							if(ColorDist(c[0], c[2]) > ColorDist(c[1], c[2]))
-							{
-								int bitindex = pindex * 2;
-								out[bitindex / 8 + 12] |= (1 << (bitindex % 8));
-								if(refine != REFINE_NEVER)
+								if(ColorDist(c[0], c[2]) > ColorDist(c[1], c[2]))
 								{
-									++nc1;
-									sc1r += refine_component_encode<ColorDist>(c[2].r);
-									sc1g += refine_component_encode<ColorDist>(c[2].g);
-									sc1b += refine_component_encode<ColorDist>(c[2].b);
+									int bitindex = pindex * 2;
+									out[bitindex / 8 + 12] |= (1 << (bitindex % 8));
+									if(refine != REFINE_NEVER)
+									{
+										if(ColorDist == color_dist_normalmap || visible)
+										{
+											++nc1;
+											sc1r += refine_component_encode<ColorDist>(c[2].r);
+											sc1g += refine_component_encode<ColorDist>(c[2].g);
+											sc1b += refine_component_encode<ColorDist>(c[2].b);
+										}
+									}
 								}
-							}
-							else
-							{
-								if(refine != REFINE_NEVER)
+								else
 								{
-									++nc0;
-									sc0r += refine_component_encode<ColorDist>(c[2].r);
-									sc0g += refine_component_encode<ColorDist>(c[2].g);
-									sc0b += refine_component_encode<ColorDist>(c[2].b);
+									if(refine != REFINE_NEVER)
+									{
+										if(ColorDist == color_dist_normalmap || visible)
+										{
+											++nc0;
+											sc0r += refine_component_encode<ColorDist>(c[2].r);
+											sc0g += refine_component_encode<ColorDist>(c[2].g);
+											sc0b += refine_component_encode<ColorDist>(c[2].b);
+										}
+									}
 								}
 							}
 							break;
@@ -596,25 +618,32 @@ namespace
 								out[bitindex / 8 + 12] |= (1 << (bitindex % 8));
 								if(refine != REFINE_NEVER)
 								{
-									++nc1;
-									sc1r += refine_component_encode<ColorDist>(c[2].r);
-									sc1g += refine_component_encode<ColorDist>(c[2].g);
-									sc1b += refine_component_encode<ColorDist>(c[2].b);
+									if(ColorDist == color_dist_normalmap || ca[2])
+									{
+										++nc1;
+										sc1r += refine_component_encode<ColorDist>(c[2].r);
+										sc1g += refine_component_encode<ColorDist>(c[2].g);
+										sc1b += refine_component_encode<ColorDist>(c[2].b);
+									}
 								}
 							}
 							else
 							{
 								if(refine != REFINE_NEVER)
 								{
-									++nc0;
-									sc0r += refine_component_encode<ColorDist>(c[2].r);
-									sc0g += refine_component_encode<ColorDist>(c[2].g);
-									sc0b += refine_component_encode<ColorDist>(c[2].b);
+									if(ColorDist == color_dist_normalmap || ca[2])
+									{
+										++nc0;
+										sc0r += refine_component_encode<ColorDist>(c[2].r);
+										sc0g += refine_component_encode<ColorDist>(c[2].g);
+										sc0b += refine_component_encode<ColorDist>(c[2].b);
+									}
 								}
 							}
 							break;
 						case DXT1:
 							{
+								// the normalmap-uses-alpha-0 hack cannot be used here
 								int bitindex = pindex * 2;
 								if(!ca[2])
 									out[bitindex / 8 + 4] |= (3 << (bitindex % 8));
@@ -683,9 +712,25 @@ namespace
 							c[4].r = rgba[(x + y * iw) * 4 + 2];
 							c[4].g = rgba[(x + y * iw) * 4 + 1];
 							c[4].b = rgba[(x + y * iw) * 4 + 0];
-							ca[4]  = rgba[(x + y * iw) * 4 + 3];
-							if(dxt == DXT1 && !ca[4])
-								continue;
+							if(ColorDist != color_dist_normalmap)
+							{
+								if(dxt == DXT5)
+								{
+									// check ENCODED alpha
+									int bitindex_0 = pindex * 3;
+									int bitindex_1 = bitindex_0 + 2;
+									if(!(out[bitindex_0 / 8 + 2] & (1 << (bitindex_0 % 8))))
+										if(out[bitindex_1 / 8 + 2] & (1 << (bitindex_1 % 8)))
+											continue;
+								}
+								else
+								{
+									// check ORIGINAL alpha (DXT1 and DXT3 preserve it)
+									ca[4] = rgba[(x + y * iw) * 4 + 3];
+									if(!ca[4])
+										continue;
+								}
+							}
 							int bitindex = pindex * 2;
 							if(out[bitindex / 8 + (dxt == DXT1 ? 4 : 12)] & (1 << (bitindex % 8)))
 							{
