@@ -6,8 +6,8 @@ YUV:		weighted Y'Cb'Cr' difference assuming sRGB input
 SRGB:		weighted YCbCr difference assuming sRGB input
 SRGB_MIXED:	weighted "Y'(Y)Cb'Cr'" difference assuming sRGB input
 LAB:		L*a*b* difference
-AVG:		standard average (generic)
-WAVG:		weighted RGB average
+AVG:		standard average of component difference (generic)
+WAVG:		weighted RGB average of component difference
 NORMALMAP: 	vector distance after normalization
 
 Color selection: S2TC_RANDOM_COLORS (default: -1)
