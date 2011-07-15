@@ -169,14 +169,25 @@ fi
 html_start
 
 # TODO download test pictures that are not under the same license as this package
+xon()
+{
+	# downloads a texture from Xonotic
+	wget -qO- "http://git.xonotic.org/?p=xonotic/xonotic-maps.pk3dir.git;a=blob;f=$1" | convert TGA:- -geometry 512x512 "$2"
+}
 # floor_tread01: GPLv2+
+xon textures/exx/floor/floor_tread01.tga floor-tread01.tga
 # floor_tread01_norm: GPLv2+
+xon textures/exx/floor/floor_tread01_norm.tga floor-tread01_norm.tga
 # base_concrete1a: GPLv2+
-# disabled: GPLv2
+xon textures/trak4x/base/base_concrete1a.tga base_concrete1a.tga
+# disabled: GPLv2+
+xon textures/screens/screen_toggle0.tga disabled.tga
 # floor_tile3a: GPLv2+
+xon textures/trak4x/floor/floor_tile3a.tga floor_tile3a.tga
 # lift02: GPLv2+
+xon textures/facility114x/misc/lift02.tga lift02.tga
 # sunset: GPLv2+
-
+xon env/distant_sunset/distant_sunset_rt.jpg sunset.tga
 # amelia: no license
 if ! [ -f "amelia.tga" ]; then
 	wget -qO- "http://www.godoon.com/gallery/media/slayers/amelia-wil-tesla-saillune/49212997-d81e-11df-8228-a8bfc396a36f.jpg" | convert JPG:- amelia.tga
