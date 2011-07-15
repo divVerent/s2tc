@@ -163,25 +163,25 @@ namespace
 		cb[0] = b.r / 31.0f * 2 - 1;
 		cb[1] = b.g / 63.0f * 2 - 1;
 		cb[2] = b.b / 31.0f * 2 - 1;
-		n = sqrt(ca[0] * ca[0] + ca[1] * ca[1] + ca[2] * ca[2]);
+		n = ca[0] * ca[0] + ca[1] * ca[1] + ca[2] * ca[2];
 		if(n > 0)
 		{
-			n = 1.0f / n;
+			n = 1.0f / sqrtf(n);
 			ca[0] *= n;
 			ca[1] *= n;
 			ca[2] *= n;
 		}
-		n = sqrt(cb[0] * cb[0] + cb[1] * cb[1] + cb[2] * cb[2]);
+		n = cb[0] * cb[0] + cb[1] * cb[1] + cb[2] * cb[2];
 		if(n > 0)
 		{
-			n = 1.0f / n;
+			n = 1.0f / sqrtf(n);
 			cb[0] *= n;
 			cb[1] *= n;
 			cb[2] *= n;
 		}
 
 		return
-			1000 *
+			100000 *
 			(
 				(cb[0] - ca[0]) * (cb[0] - ca[0])
 				+
