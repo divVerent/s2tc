@@ -173,7 +173,7 @@ xon()
 {
 	# downloads a texture from Xonotic
 	if ! [ -f "$2" ]; then
-		wget -qO- "http://git.xonotic.org/?p=xonotic/xonotic-maps.pk3dir.git;a=blob;f=$1" | convert TGA:- -geometry 512x512 "$2"
+		wget -qO- "http://git.xonotic.org/?p=xonotic/xonotic-maps.pk3dir.git;a=blob;f=$1" | convert - -geometry 512x512 "$2"
 	fi
 }
 # floor_tread01: GPLv2+
