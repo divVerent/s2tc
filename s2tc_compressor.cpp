@@ -851,6 +851,14 @@ namespace
 		*diff = src - loop;
 		return ret;
 	}
+	inline int diffuse1(int *diff, int src)
+	{
+		src += *diff;
+		int ret = (src >= 128);
+		int loop = ret ? 255 : 0;
+		*diff = src - loop;
+		return ret;
+	}
 };
 
 void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h, int srccomps, int bgr, int alphabits)
@@ -882,10 +890,20 @@ void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h, i
 	}
 	if(srccomps == 4)
 	{
-		int alphadiffuse = 8 - alphabits;
-		for(y = 0; y < h; ++y)
-			for(x = 0; x < w; ++x)
-				out[(x + y * w) * 4 + 3] = diffuse(&diffuse_a, rgba[(x + y * w) * srccomps + 3], alphadiffuse);
+		if(alphabits == 1)
+		{
+			int alphadiffuse = 8 - alphabits;
+			for(y = 0; y < h; ++y)
+				for(x = 0; x < w; ++x)
+					out[(x + y * w) * 4 + 3] = diffuse1(&diffuse_a, rgba[(x + y * w) * srccomps + 3]);
+		}
+		else
+		{
+			int alphadiffuse = 8 - alphabits;
+			for(y = 0; y < h; ++y)
+				for(x = 0; x < w; ++x)
+					out[(x + y * w) * 4 + 3] = diffuse(&diffuse_a, rgba[(x + y * w) * srccomps + 3], alphadiffuse);
+		}
 	}
 	else
 	{
