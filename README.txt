@@ -4,7 +4,7 @@ Color distance function: S2TC_COLORDIST_MODE (default: WAVG)
 RGB:		weighted YCbCr difference assuming linear input
 YUV:		weighted Y'Cb'Cr' difference assuming sRGB input
 SRGB:		weighted YCbCr difference assuming sRGB input
-SRGB_MIXED:	weighted "Y'CbCr" difference assuming sRGB input
+SRGB_MIXED:	weighted "Y'(Y)Cb'Cr'" difference assuming sRGB input
 LAB:		L*a*b* difference
 AVG:		standard average (generic)
 WAVG:		weighted RGB average
