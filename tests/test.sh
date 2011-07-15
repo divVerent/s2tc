@@ -11,7 +11,7 @@ make install
 cd tests
 
 rm -rf html
-rm *.dds
+rm -f *.dds
 mkdir html
 exec 3>html/index.html
 
