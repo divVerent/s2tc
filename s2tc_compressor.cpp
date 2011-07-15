@@ -710,48 +710,51 @@ namespace
 					// alpha refinement is always good and doesn't
 					// need to be checked because alpha is linear
 				}
-
-				if(dxt == DXT5)
-				{
-					if(ca[1] < ca[0])
-					{
-						ca[2] = ca[0];
-						ca[0] = ca[1];
-						ca[1] = ca[2];
-						// swap the alphas
-						for(int pindex = 0; pindex < 16; ++pindex)
-						{
-							int bitindex_set = pindex * 3;
-							int bitindex_test = bitindex_set + 2;
-							if(!(out[bitindex_test / 8 + 2] & (1 << (bitindex_test % 8))))
-								out[bitindex_set / 8 + 2] ^= (1 << (bitindex_set % 8));
-						}
-					}
-				}
-				if(c[1] < c[0])
-				{
-					c[2] = c[0];
-					c[0] = c[1];
-					c[1] = c[2];
-					// swap the colors
-					if(dxt == DXT1)
-					{
-						out[4] ^= 0x55 & ~(out[4] >> 1);
-						out[5] ^= 0x55 & ~(out[5] >> 1);
-						out[6] ^= 0x55 & ~(out[6] >> 1);
-						out[7] ^= 0x55 & ~(out[7] >> 1);
-					}
-					else
-					{
-						out[12] ^= 0x55 & ~(out[12] >> 1);
-						out[13] ^= 0x55 & ~(out[13] >> 1);
-						out[14] ^= 0x55 & ~(out[14] >> 1);
-						out[15] ^= 0x55 & ~(out[15] >> 1);
-					}
-				}
 			}
 		}
 		while(refine == REFINE_LOOP && refined);
+
+		if(refine != REFINE_NEVER)
+		{
+			if(dxt == DXT5)
+			{
+				if(ca[1] < ca[0])
+				{
+					ca[2] = ca[0];
+					ca[0] = ca[1];
+					ca[1] = ca[2];
+					// swap the alphas
+					for(int pindex = 0; pindex < 16; ++pindex)
+					{
+						int bitindex_set = pindex * 3;
+						int bitindex_test = bitindex_set + 2;
+						if(!(out[bitindex_test / 8 + 2] & (1 << (bitindex_test % 8))))
+							out[bitindex_set / 8 + 2] ^= (1 << (bitindex_set % 8));
+					}
+				}
+			}
+			if(c[1] < c[0])
+			{
+				c[2] = c[0];
+				c[0] = c[1];
+				c[1] = c[2];
+				// swap the colors
+				if(dxt == DXT1)
+				{
+					out[4] ^= 0x55 & ~(out[4] >> 1);
+					out[5] ^= 0x55 & ~(out[5] >> 1);
+					out[6] ^= 0x55 & ~(out[6] >> 1);
+					out[7] ^= 0x55 & ~(out[7] >> 1);
+				}
+				else
+				{
+					out[12] ^= 0x55 & ~(out[12] >> 1);
+					out[13] ^= 0x55 & ~(out[13] >> 1);
+					out[14] ^= 0x55 & ~(out[14] >> 1);
+					out[15] ^= 0x55 & ~(out[15] >> 1);
+				}
+			}
+		}
 
 		switch(dxt)
 		{
