@@ -10,7 +10,9 @@ make
 make install
 cd tests
 
-mkdir -p html
+rm -rf html
+rm *.dds
+mkdir html
 exec 3>html/index.html
 
 html_start()
