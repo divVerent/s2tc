@@ -176,7 +176,12 @@ html_start
 # floor_tile3a: GPLv2+
 # lift02: GPLv2+
 # sunset: GPLv2+
+
 # amelia: no license
+if ! [ -f "amelia.tga" ]; then
+	wget -qO- "http://www.godoon.com/gallery/media/slayers/amelia-wil-tesla-saillune/49212997-d81e-11df-8228-a8bfc396a36f.jpg" | convert JPG:- amelia.tga
+fi
+
 
 for i in dxtfail floor_tread01 floor_tread01_norm fract001 base_concrete1a disabled floor_tile3a lift02 sunset amelia noise noise_solid supernova; do
 	html_rowstart "$i"
