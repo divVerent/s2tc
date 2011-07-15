@@ -561,20 +561,20 @@ namespace
 								{
 									// 6
 									++bitindex;
-									out[bitindex / 8 + 2] |= (1 << (bitindex % 8));
+									setbit(&out[2], bitindex);
 									++bitindex;
-									out[bitindex / 8 + 2] |= (1 << (bitindex % 8));
+									setbit(&out[2], bitindex);
 									if(alpha_0_is_unimportant<ColorDist>())
 										visible = false;
 								}
 								else if(da[3] <= da[0] && da[3] <= da[1])
 								{
 									// 7
-									out[bitindex / 8 + 2] |= (1 << (bitindex % 8));
+									setbit(&out[2], bitindex);
 									++bitindex;
-									out[bitindex / 8 + 2] |= (1 << (bitindex % 8));
+									setbit(&out[2], bitindex);
 									++bitindex;
-									out[bitindex / 8 + 2] |= (1 << (bitindex % 8));
+									setbit(&out[2], bitindex);
 								}
 								else if(da[0] <= da[1])
 								{
@@ -588,7 +588,7 @@ namespace
 								else
 								{
 									// 1
-									out[bitindex / 8 + 2] |= (1 << (bitindex % 8));
+									setbit(&out[2], bitindex);
 									if(refine != REFINE_NEVER)
 									{
 										++na1;
@@ -598,7 +598,7 @@ namespace
 								if(ColorDist(c[0], c[2]) > ColorDist(c[1], c[2]))
 								{
 									int bitindex = pindex * 2;
-									out[bitindex / 8 + 12] |= (1 << (bitindex % 8));
+									setbit(&out[12], bitindex);
 									if(refine != REFINE_NEVER)
 									{
 										if(!alpha_0_is_unimportant<ColorDist>() || visible)
@@ -628,12 +628,12 @@ namespace
 						case DXT3:
 							{
 								int bitindex = pindex * 4;
-								out[bitindex / 8 + 0] |= (ca[2] << (bitindex % 8));
+								setbit(&out[0], bitindex, ca[2]);
 							}
 							if(ColorDist(c[0], c[2]) > ColorDist(c[1], c[2]))
 							{
 								int bitindex = pindex * 2;
-								out[bitindex / 8 + 12] |= (1 << (bitindex % 8));
+								setbit(&out[12], bitindex);
 								if(refine != REFINE_NEVER)
 								{
 									if(!alpha_0_is_unimportant<ColorDist>() || ca[2])
@@ -664,10 +664,10 @@ namespace
 								// the normalmap-uses-alpha-0 hack cannot be used here
 								int bitindex = pindex * 2;
 								if(!ca[2])
-									out[bitindex / 8 + 4] |= (3 << (bitindex % 8));
+									setbit(&out[4], bitindex, 3);
 								else if(ColorDist(c[0], c[2]) > ColorDist(c[1], c[2]))
 								{
-									out[bitindex / 8 + 4] |= (1 << (bitindex % 8));
+									setbit(&out[4], bitindex);
 									if(refine != REFINE_NEVER)
 									{
 										++nc1;
@@ -737,8 +737,8 @@ namespace
 									// check ENCODED alpha
 									int bitindex_0 = pindex * 3;
 									int bitindex_1 = bitindex_0 + 2;
-									if(!(out[bitindex_0 / 8 + 2] & (1 << (bitindex_0 % 8))))
-										if(out[bitindex_1 / 8 + 2] & (1 << (bitindex_1 % 8)))
+									if(!testbit(&out[2], bitindex_0))
+										if(testbit(&out[2], bitindex_1))
 											continue;
 								}
 								else
@@ -750,7 +750,7 @@ namespace
 								}
 							}
 							int bitindex = pindex * 2;
-							if(out[bitindex / 8 + (dxt == DXT1 ? 4 : 12)] & (1 << (bitindex % 8)))
+							if(testbit(&out[(dxt == DXT1 ? 4 : 12)], bitindex))
 							{
 								// we picked an 1
 								score_01 += ColorDist(c[1], c[4]);
@@ -794,8 +794,8 @@ namespace
 					{
 						int bitindex_set = pindex * 3;
 						int bitindex_test = bitindex_set + 2;
-						if(!(out[bitindex_test / 8 + 2] & (1 << (bitindex_test % 8))))
-							out[bitindex_set / 8 + 2] ^= (1 << (bitindex_set % 8));
+						if(!testbit(&out[2], bitindex_test))
+							xorbit(&out[2], bitindex_set);
 					}
 				}
 			}

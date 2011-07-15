@@ -7,16 +7,17 @@ extern "C"
 #include <stdio.h>
 #include <string.h>
 #include "s2tc_compressor.h"
+#include "s2tc_common.h"
 
 void fetch_2d_texel_rgb_dxt1(GLint srcRowStride, const GLubyte *pixdata,
 			     GLint i, GLint j, GLvoid *texel)
 {
 	// fetches a single texel (i,j) into pixdata (RGB)
 	GLubyte *t = (GLubyte *) texel;
-	const GLubyte *blksrc = (pixdata + ((srcRowStride + 3) / 4 * (j / 4) + (i / 4)) * 8);
+	const GLubyte *blksrc = (pixdata + (((srcRowStride + 3) >> 2) * (j >> 2) + (i >> 2)) * 8);
 	unsigned int c  = blksrc[0] + 256*blksrc[1];
 	unsigned int c1 = blksrc[2] + 256*blksrc[3];
-	int b = (blksrc[4 + (j % 4)] >> (2 * (i % 4))) & 0x03;
+	int b = (blksrc[4 + (j & 3)] >> (2 * (i & 3))) & 0x03;
 	switch(b)
 	{
 		case 0:                        break;
@@ -35,10 +36,10 @@ void fetch_2d_texel_rgba_dxt1(GLint srcRowStride, const GLubyte *pixdata,
 {
 	// fetches a single texel (i,j) into pixdata (RGBA)
 	GLubyte *t = (GLubyte *) texel;
-	const GLubyte *blksrc = (pixdata + ((srcRowStride + 3) / 4 * (j / 4) + (i / 4)) * 8);
+	const GLubyte *blksrc = (pixdata + (((srcRowStride + 3) >> 2) * (j >> 2) + (i >> 2)) * 8);
 	unsigned int c  = blksrc[0] + 256*blksrc[1];
 	unsigned int c1 = blksrc[2] + 256*blksrc[3];
-	int b = (blksrc[4 + (j % 4)] >> (2 * (i % 4))) & 0x03;
+	int b = (blksrc[4 + (j & 3)] >> (2 * (i & 3))) & 0x03;
 	switch(b)
 	{
 		case 0:                        t[3] = 255; break;
@@ -56,10 +57,10 @@ void fetch_2d_texel_rgba_dxt3(GLint srcRowStride, const GLubyte *pixdata,
 {
 	// fetches a single texel (i,j) into pixdata (RGBA)
 	GLubyte *t = (GLubyte *) texel;
-	const GLubyte *blksrc = (pixdata + ((srcRowStride + 3) / 4 * (j / 4) + (i / 4)) * 16);
+	const GLubyte *blksrc = (pixdata + (((srcRowStride + 3) >> 2) * (j >> 2) + (i >> 2)) * 16);
 	unsigned int c  = blksrc[8] + 256*blksrc[9];
 	unsigned int c1 = blksrc[10] + 256*blksrc[11];
-	int b = (blksrc[12 + (j % 4)] >> (2 * (i % 4))) & 0x03;
+	int b = (blksrc[12 + (j & 3)] >> (2 * (i & 3))) & 0x03;
 	switch(b)
 	{
 		case 0:                        break;
@@ -69,7 +70,7 @@ void fetch_2d_texel_rgba_dxt3(GLint srcRowStride, const GLubyte *pixdata,
 	t[0] = ((c >> 11) & 0x1F); t[0] = (t[0] << 3) | (t[0] >> 2);
 	t[1] = ((c >>  5) & 0x3F); t[1] = (t[1] << 2) | (t[1] >> 4);
 	t[2] = ((c      ) & 0x1F); t[2] = (t[2] << 3) | (t[2] >> 2);
-	int a = (blksrc[(j % 4) * 2 + (i % 4) / 2] >> (4 * (i % 4) % 2)) & 0x0F;
+	int a = (blksrc[(j & 3) * 2 + ((i & 3) >> 1)] >> (4 * (i & 1))) & 0x0F;
 	t[3] = a | (a << 4);
 }
 
@@ -78,10 +79,10 @@ void fetch_2d_texel_rgba_dxt5(GLint srcRowStride, const GLubyte *pixdata,
 {
 	// fetches a single texel (i,j) into pixdata (RGBA)
 	GLubyte *t = (GLubyte *) texel;
-	const GLubyte *blksrc = (pixdata + ((srcRowStride + 3) / 4 * (j / 4) + (i / 4)) * 16);
+	const GLubyte *blksrc = (pixdata + (((srcRowStride + 3) >> 2) * (j >> 2) + (i >> 2)) * 16);
 	unsigned int c  = blksrc[8] + 256*blksrc[9];
 	unsigned int c1 = blksrc[10] + 256*blksrc[11];
-	int b = (blksrc[12 + (j % 4)] >> (2 * (i % 4))) & 0x03;
+	int b = (blksrc[12 + (j & 3)] >> (2 * (i & 3))) & 0x03;
 	switch(b)
 	{
 		case 0:                        break;
@@ -94,15 +95,15 @@ void fetch_2d_texel_rgba_dxt5(GLint srcRowStride, const GLubyte *pixdata,
 
 	unsigned int a  = blksrc[0];
 	unsigned int a1 = blksrc[1];
-	int abit = ((j % 4) * 4 + (i % 4)) * 3;
+	int abit = ((j & 3) * 4 + (i & 3)) * 3;
 	int ab = 0;
-	if(blksrc[(abit / 8) + 2] & (1 << (abit % 8)))
+	if(testbit(&blksrc[2], abit))
 		ab |= 1;
 	++abit;
-	if(blksrc[(abit / 8) + 2] & (1 << (abit % 8)))
+	if(testbit(&blksrc[2], abit))
 		ab |= 2;
 	++abit;
-	if(blksrc[(abit / 8) + 2] & (1 << (abit % 8)))
+	if(testbit(&blksrc[2], abit))
 		ab |= 4;
 	switch(ab)
 	{
