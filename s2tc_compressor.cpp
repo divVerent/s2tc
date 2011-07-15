@@ -358,6 +358,16 @@ namespace
 		return sqrtf(comp) + 0.5f;
 	}
 
+	// these color dist functions ignore color values at alpha 0
+	template<ColorDistFunc ColorDist> inline bool alpha_0_is_unimportant()
+	{
+		return true;
+	}
+	template<> inline bool alpha_0_is_unimportant<color_dist_normalmap>()
+	{
+		return false;
+	}
+
 	template<DxtMode dxt, ColorDistFunc ColorDist, CompressionMode mode, RefinementMode refine>
 	inline void s2tc_encode_block(unsigned char *out, const unsigned char *rgba, int iw, int w, int h, int nrandom)
 	{
@@ -432,7 +442,7 @@ namespace
 				for(y = 0; y < h; ++y)
 				{
 					ca[n]  = rgba[(x + y * iw) * 4 + 3];
-					if(ColorDist != color_dist_normalmap)
+					if(alpha_0_is_unimportant<ColorDist>())
 						if(!ca[n])
 							continue;
 					c[n].r = rgba[(x + y * iw) * 4 + 2];
@@ -554,7 +564,7 @@ namespace
 									out[bitindex / 8 + 2] |= (1 << (bitindex % 8));
 									++bitindex;
 									out[bitindex / 8 + 2] |= (1 << (bitindex % 8));
-									if(ColorDist != color_dist_normalmap)
+									if(alpha_0_is_unimportant<ColorDist>())
 										visible = false;
 								}
 								else if(da[3] <= da[0] && da[3] <= da[1])
@@ -591,7 +601,7 @@ namespace
 									out[bitindex / 8 + 12] |= (1 << (bitindex % 8));
 									if(refine != REFINE_NEVER)
 									{
-										if(ColorDist == color_dist_normalmap || visible)
+										if(!alpha_0_is_unimportant<ColorDist>() || visible)
 										{
 											++nc1;
 											sc1r += refine_component_encode<ColorDist>(c[2].r);
@@ -604,7 +614,7 @@ namespace
 								{
 									if(refine != REFINE_NEVER)
 									{
-										if(ColorDist == color_dist_normalmap || visible)
+										if(!alpha_0_is_unimportant<ColorDist>() || visible)
 										{
 											++nc0;
 											sc0r += refine_component_encode<ColorDist>(c[2].r);
@@ -626,7 +636,7 @@ namespace
 								out[bitindex / 8 + 12] |= (1 << (bitindex % 8));
 								if(refine != REFINE_NEVER)
 								{
-									if(ColorDist == color_dist_normalmap || ca[2])
+									if(!alpha_0_is_unimportant<ColorDist>() || ca[2])
 									{
 										++nc1;
 										sc1r += refine_component_encode<ColorDist>(c[2].r);
@@ -639,7 +649,7 @@ namespace
 							{
 								if(refine != REFINE_NEVER)
 								{
-									if(ColorDist == color_dist_normalmap || ca[2])
+									if(!alpha_0_is_unimportant<ColorDist>() || ca[2])
 									{
 										++nc0;
 										sc0r += refine_component_encode<ColorDist>(c[2].r);
@@ -720,7 +730,7 @@ namespace
 							c[4].r = rgba[(x + y * iw) * 4 + 2];
 							c[4].g = rgba[(x + y * iw) * 4 + 1];
 							c[4].b = rgba[(x + y * iw) * 4 + 0];
-							if(ColorDist != color_dist_normalmap)
+							if(!alpha_0_is_unimportant<ColorDist>())
 							{
 								if(dxt == DXT5)
 								{
@@ -834,6 +844,20 @@ namespace
 		}
 	}
 
+	// these color dist functions do not need the refinement check, as they always improve the situation
+	template<ColorDistFunc ColorDist> inline bool need_refine_check()
+	{
+		return true;
+	}
+	template<> inline bool need_refine_check<color_dist_avg>()
+	{
+		return false;
+	}
+	template<> inline bool need_refine_check<color_dist_wavg>()
+	{
+		return false;
+	}
+
 	// compile time dispatch magic
 	template<DxtMode dxt, ColorDistFunc ColorDist, CompressionMode mode>
 	inline s2tc_encode_block_func_t s2tc_encode_block_func(RefinementMode refine)
@@ -843,12 +867,10 @@ namespace
 			case REFINE_NEVER:
 				return s2tc_encode_block<dxt, ColorDist, mode, REFINE_NEVER>;
 			case REFINE_CHECK:
-				// these color dist functions do not need the refinement check, as they always improve the situation
-				if(ColorDist != color_dist_avg && ColorDist != color_dist_wavg)
+				if(need_refine_check<ColorDist>())
 					return s2tc_encode_block<dxt, ColorDist, mode, REFINE_CHECK>;
 			case REFINE_LOOP:
-				// these color dist functions do not need the refinement check, as they always improve the situation
-				if(ColorDist != color_dist_avg && ColorDist != color_dist_wavg)
+				if(need_refine_check<ColorDist>())
 					return s2tc_encode_block<dxt, ColorDist, mode, REFINE_CHECK>;
 			default:
 			case REFINE_ALWAYS:
@@ -856,12 +878,22 @@ namespace
 		}
 	}
 
+	// these color dist functions do not need the refinement check, as they always improve the situation
+	template<ColorDistFunc ColorDist> inline bool supports_fast()
+	{
+		return true;
+	}
+	template<> inline bool need_refine_check<color_dist_normalmap>()
+	{
+		return false;
+	}
+
 	template<DxtMode dxt, ColorDistFunc ColorDist>
 	inline s2tc_encode_block_func_t s2tc_encode_block_func(int nrandom, RefinementMode refine)
 	{
 		if(nrandom > 0)
 			return s2tc_encode_block_func<dxt, ColorDist, MODE_RANDOM>(refine);
-		else if(nrandom == 0 || ColorDist == color_dist_normalmap) // MODE_FAST not supported for normalmaps, sorry
+		else if(!supports_fast<ColorDist>() || nrandom == 0) // MODE_FAST not supported for normalmaps, sorry
 			return s2tc_encode_block_func<dxt, ColorDist, MODE_NORMAL>(refine);
 		else
 			return s2tc_encode_block_func<dxt, ColorDist, MODE_FAST>(refine);

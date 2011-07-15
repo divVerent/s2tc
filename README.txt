@@ -1,4 +1,4 @@
-Environment variables:
+nvironment variables:
 
 Color distance function: S2TC_COLORDIST_MODE (default: WAVG)
 RGB:		weighted YCbCr difference assuming linear input
