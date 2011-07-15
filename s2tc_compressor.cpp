@@ -362,8 +362,7 @@ namespace
 	inline void s2tc_encode_block(unsigned char *out, const unsigned char *rgba, int iw, int w, int h, int nrandom)
 	{
 		color_t c[16 + (mode == MODE_RANDOM ? nrandom : 0)];
-
-		unsigned char ca[16];
+		unsigned char ca[16 + (mode == MODE_RANDOM ? nrandom : 0)];
 		int n = 0, m = 0;
 		int x, y;
 
