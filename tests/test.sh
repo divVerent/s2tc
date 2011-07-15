@@ -5,7 +5,7 @@ set -e
 cd ..
 make clean || true
 sh autogen.sh
-./configure --prefix="`pwd`/tests" CXXFLAGS="-O3"
+./configure --prefix="`pwd`/tests" --enable-shared --disable-static CXXFLAGS="-O3"
 make
 make install
 cd tests
