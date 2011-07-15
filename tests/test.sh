@@ -154,7 +154,7 @@ else
 fi
 
 html_start
-for i in dxtfail fract001 base_concrete1a disabled floor_tile3a lift02 panel_ceil1a sunset amelia rms noise noise_solid supernova ishihara augenkrebs; do
+for i in dxtfail floor_tread01 floor_tread01_norm fract001 base_concrete1a disabled floor_tile3a lift02 panel_ceil1a sunset amelia rms noise noise_solid supernova ishihara augenkrebs; do
 	html_rowstart "$i"
 
 	html "$i".tga
