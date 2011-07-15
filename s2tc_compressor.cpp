@@ -482,12 +482,15 @@ namespace
 			{
 				if(ca[1] < ca[0])
 				{
+					// select mode with 6 = 0, 7 = 255
 					ca[2] = ca[0];
 					ca[0] = ca[1];
 					ca[1] = ca[2];
 				}
 			}
-			if(c[1] < c[0])
+			if((dxt == DXT1) ? (c[1] < c[0]) : (c[0] < c[1]))
+			// DXT1: select mode with 3 = transparent
+			// other: don't select this mode
 			{
 				c[2] = c[0];
 				c[0] = c[1];
@@ -733,7 +736,9 @@ namespace
 					}
 				}
 			}
-			if(c[1] < c[0])
+			if((dxt == DXT1) ? (c[1] < c[0]) : (c[0] < c[1]))
+			// DXT1: select mode with 3 = transparent
+			// other: don't select this mode
 			{
 				c[2] = c[0];
 				c[0] = c[1];
