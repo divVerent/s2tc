@@ -892,10 +892,15 @@ void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h, i
 	{
 		if(alphabits == 1)
 		{
-			int alphadiffuse = 8 - alphabits;
 			for(y = 0; y < h; ++y)
 				for(x = 0; x < w; ++x)
 					out[(x + y * w) * 4 + 3] = diffuse1(&diffuse_a, rgba[(x + y * w) * srccomps + 3]);
+		}
+		else if(alphabits == 8)
+		{
+			for(y = 0; y < h; ++y)
+				for(x = 0; x < w; ++x)
+					out[(x + y * w) * 4 + 3] = rgba[(x + y * w) * srccomps + 3]; // no conversion
 		}
 		else
 		{
