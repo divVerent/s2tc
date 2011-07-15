@@ -86,14 +86,21 @@ html_rowstart()
 
 decompress()
 {
-	if $use_libtxc_dxtn; then
-		LD_PRELOAD=/usr/lib/libtxc_dxtn.so bin/s2tc_decompress < "$1"
-	elif use_nvcompress; then
-		nvdecompress "$1"
-	else
-		# this has bugs with alpha channels
-		convert "$1" TGA:-
-	fi
+	case "$1" in
+		*.dds)
+			if $use_libtxc_dxtn; then
+				LD_PRELOAD=/usr/lib/libtxc_dxtn.so bin/s2tc_decompress < "$1"
+			elif use_nvcompress; then
+				nvdecompress "$1"
+			else
+				# this has bugs with alpha channels
+				convert "$1" TGA:-
+			fi
+			;;
+		*)
+			cat "$1"
+			;;
+	esac
 }
 
 html()
