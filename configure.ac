@@ -5,7 +5,7 @@ AM_INIT_AUTOMAKE([-Wall foreign])
 have_CXXFLAGS=${CXXFLAGS+set}
 AC_PROG_CXX
 # better default optimization flags for g++, please
-if test $have_CXXFLAGS != set; then
+if test "$have_CXXFLAGS" != set; then
 	if test "$GXX" = yes; then
 		CXXFLAGS="-g -O3"
 	fi
