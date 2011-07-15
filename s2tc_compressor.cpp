@@ -720,7 +720,7 @@ namespace
 					for(int pindex = 0; pindex < 16; ++pindex)
 					{
 						int bitindex_set = pindex * 3;
-						int bitindex_test = bitindex_set + 3;
+						int bitindex_test = bitindex_set + 2;
 						if(!(out[bitindex_test / 8] & (1 << (bitindex_test % 8))))
 							out[bitindex_set / 8] ^= (1 << (bitindex_set % 8));
 					}
