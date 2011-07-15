@@ -372,12 +372,15 @@ namespace
 
 			color_t c0 = {0, 0, 0};
 
-			c[0].r = rgba[2];
-			c[0].g = rgba[1];
-			c[0].b = rgba[0];
-			c[1] = c[0];
-			int dmin = ColorDist(c[0], c0);
-			int dmax = dmin;
+			// dummy values because we don't know whether the first pixel willw rite
+			c[0].r = 31;
+			c[0].g = 63;
+			c[0].b = 31;
+			c[1].r = 0;
+			c[1].g = 0;
+			c[1].b = 0;
+			int dmin = 0x7FFFFFFF;
+			int dmax = 0;
 			if(dxt == DXT5)
 			{
 				ca[0] = rgba[3];
@@ -385,15 +388,15 @@ namespace
 			}
 
 			for(x = 0; x < w; ++x)
-				for(y = !x; y < h; ++y)
+				for(y = 0; y < h; ++y)
 				{
 					c[2].r = rgba[(x + y * iw) * 4 + 2];
 					c[2].g = rgba[(x + y * iw) * 4 + 1];
 					c[2].b = rgba[(x + y * iw) * 4 + 0];
 					ca[2]  = rgba[(x + y * iw) * 4 + 3];
-					if(ColorDist != color_dist_normalmap)
-						if(!ca[2])
-							continue;
+					// MODE_FAST doesn't work for normalmaps, so this works
+					if(!ca[2])
+						continue;
 
 					int d = ColorDist(c[2], c0);
 					if(d > dmax)
@@ -409,12 +412,17 @@ namespace
 
 					if(dxt == DXT5)
 					{
-						if(ca[2] > ca[1])
-							ca[1] = ca[2];
-						if(ca[2] < ca[0])
-							ca[0] = ca[2];
+						if(ca[2] != 255)
+						{
+							if(ca[2] > ca[1])
+								ca[1] = ca[2];
+							if(ca[2] < ca[0])
+								ca[0] = ca[2];
+						}
 					}
 				}
+
+			// if ALL pixels were transparent, this won't stop us
 
 			m = n = 2;
 		}
