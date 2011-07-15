@@ -66,15 +66,16 @@ EOF
 	if $use_nvcompress; then
 		echo >&3 "<th>nvcompress</th>"
 	fi
-	echo >&3 "<th>rand32-sRGB-mixed</th>"
-	echo >&3 "<th>rand32-wavg</th>"
-	echo >&3 "<th>rand32-avg</th>"
+	echo >&3 "<th>rand32-sRGB-mixed-l</th>"
+	echo >&3 "<th>rand32-wavg-l</th>"
+	echo >&3 "<th>rand32-avg-l</th>"
 
 	if $use_libtxc_dxtn; then
 		echo >&3 "<th>libtxc_dxtn</th>"
 	fi
-	echo >&3 "<th>norand-wavg</th>"
-	echo >&3 "<th>faster-wavg</th>"
+	echo >&3 "<th>norand-wavg-r</th>"
+	echo >&3 "<th>faster-wavg-r</th>"
+	echo >&3 "<th>faster-wavg-l</th>"
 
 	echo >&3 "</tr>"
 }
@@ -241,15 +242,16 @@ for i in dxtfail floor_tread01 floor_tread01_norm_dxt5 floor_tread01_norm_dxt3 f
 		html "$i"-nvcompress.dds
 	fi
 
-	S2TC_COLORDIST_MODE=$goodmetric S2TC_RANDOM_COLORS=32 S2TC_REFINE_COLORS=LOOP   t "$i".tga "$i"-rand32-mrgb-r.dds bin/s2tc -t $fourcc
-	S2TC_COLORDIST_MODE=WAVG        S2TC_RANDOM_COLORS=32 S2TC_REFINE_COLORS=LOOP   t "$i".tga "$i"-rand32-wavg-r.dds bin/s2tc -t $fourcc
-	S2TC_COLORDIST_MODE=AVG         S2TC_RANDOM_COLORS=32 S2TC_REFINE_COLORS=LOOP   t "$i".tga "$i"-rand32-avg-r.dds  bin/s2tc -t $fourcc
+	S2TC_COLORDIST_MODE=$goodmetric S2TC_RANDOM_COLORS=32 S2TC_REFINE_COLORS=LOOP   t "$i".tga "$i"-rand32-mrgb-l.dds bin/s2tc -t $fourcc
+	S2TC_COLORDIST_MODE=WAVG        S2TC_RANDOM_COLORS=32 S2TC_REFINE_COLORS=LOOP   t "$i".tga "$i"-rand32-wavg-l.dds bin/s2tc -t $fourcc
+	S2TC_COLORDIST_MODE=AVG         S2TC_RANDOM_COLORS=32 S2TC_REFINE_COLORS=LOOP   t "$i".tga "$i"-rand32-avg-l.dds  bin/s2tc -t $fourcc
 	if $use_libtxc_dxtn; then
 		LD_PRELOAD=/usr/lib/libtxc_dxtn.so                                      t "$i".tga "$i"-libtxc_dxtn.dds   bin/s2tc -t $fourcc
 		unset LD_PRELOAD
 	fi
 	S2TC_COLORDIST_MODE=WAVG        S2TC_RANDOM_COLORS=0  S2TC_REFINE_COLORS=ALWAYS t "$i".tga "$i"-norand-wavg-r.dds bin/s2tc -t $fourcc
 	S2TC_COLORDIST_MODE=WAVG        S2TC_RANDOM_COLORS=-1 S2TC_REFINE_COLORS=ALWAYS t "$i".tga "$i"-faster-wavg-r.dds bin/s2tc -t $fourcc
+	S2TC_COLORDIST_MODE=WAVG        S2TC_RANDOM_COLORS=-1 S2TC_REFINE_COLORS=LOOP   t "$i".tga "$i"-faster-wavg-l.dds bin/s2tc -t $fourcc
 
 	html_rowend
 done
