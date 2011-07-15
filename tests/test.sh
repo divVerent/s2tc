@@ -88,14 +88,7 @@ decompress()
 {
 	case "$1" in
 		*.dds)
-			if $use_libtxc_dxtn; then
-				LD_PRELOAD=/usr/lib/libtxc_dxtn.so bin/s2tc_decompress < "$1"
-			elif use_nvcompress; then
-				nvdecompress "$1"
-			else
-				# this has bugs with alpha channels
-				convert "$1" TGA:-
-			fi
+			convert "$1" TGA:-
 			;;
 		*)
 			cat "$1"
@@ -179,8 +172,19 @@ for i in dxtfail floor_tread01 floor_tread01_norm fract001 base_concrete1a disab
 
 	html "$i".tga
 
+	case "$i" in
+		*_norm)
+			fourcc=DXT5
+			nvopts="-bc3 -alpha"
+			;;
+		*)
+			fourcc=DXT1
+			nvopts="-bc1"
+			;;
+	esac
+
 	if $use_compressonator; then
-		timing wine "c:/Program Files (x86)/AMD/The Compressonator 1.50/TheCompressonator.exe" -convert -overwrite -mipmaps "$i".tga "$i"-amdcompress.dds -codec DXTC.dll +fourCC DXT1 -mipper BoxFilter.dll
+		timing wine "c:/Program Files (x86)/AMD/The Compressonator 1.50/TheCompressonator.exe" -convert -overwrite -mipmaps "$i".tga "$i"-amdcompress.dds -codec DXTC.dll +fourCC $fourcc -mipper BoxFilter.dll
 		html "$i"-amdcompress.dds
 	fi
 
@@ -189,15 +193,15 @@ for i in dxtfail floor_tread01 floor_tread01_norm fract001 base_concrete1a disab
 		html "$i"-nvcompress.dds
 	fi
 
-	S2TC_COLORDIST_MODE=SRGB_MIXED S2TC_RANDOM_COLORS=32 S2TC_REFINE_COLORS=CHECK  t "$i".tga "$i"-rand32-mrgb-r.dds bin/s2tc
-	S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=32 S2TC_REFINE_COLORS=CHECK  t "$i".tga "$i"-rand32-wavg-r.dds bin/s2tc
-	S2TC_COLORDIST_MODE=AVG        S2TC_RANDOM_COLORS=32 S2TC_REFINE_COLORS=CHECK  t "$i".tga "$i"-rand32-avg-r.dds  bin/s2tc
+	S2TC_COLORDIST_MODE=SRGB_MIXED S2TC_RANDOM_COLORS=32 S2TC_REFINE_COLORS=CHECK  t "$i".tga "$i"-rand32-mrgb-r.dds bin/s2tc -t $fourcc
+	S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=32 S2TC_REFINE_COLORS=CHECK  t "$i".tga "$i"-rand32-wavg-r.dds bin/s2tc -t $fourcc
+	S2TC_COLORDIST_MODE=AVG        S2TC_RANDOM_COLORS=32 S2TC_REFINE_COLORS=CHECK  t "$i".tga "$i"-rand32-avg-r.dds  bin/s2tc -t $fourcc
 	if $use_libtxc_dxtn; then
-		LD_PRELOAD=/usr/lib/libtxc_dxtn.so                                     t "$i".tga "$i"-libtxc_dxtn.dds   bin/s2tc
+		LD_PRELOAD=/usr/lib/libtxc_dxtn.so                                     t "$i".tga "$i"-libtxc_dxtn.dds   bin/s2tc -t $fourcc
 		unset LD_PRELOAD
 	fi
-	S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=0  S2TC_REFINE_COLORS=ALWAYS t "$i".tga "$i"-norand-wavg-r.dds bin/s2tc
-	S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=-1 S2TC_REFINE_COLORS=ALWAYS t "$i".tga "$i"-faster-wavg-r.dds bin/s2tc
+	S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=0  S2TC_REFINE_COLORS=ALWAYS t "$i".tga "$i"-norand-wavg-r.dds bin/s2tc -t $fourcc
+	S2TC_COLORDIST_MODE=WAVG       S2TC_RANDOM_COLORS=-1 S2TC_REFINE_COLORS=ALWAYS t "$i".tga "$i"-faster-wavg-r.dds bin/s2tc -t $fourcc
 
 	html_rowend
 done
