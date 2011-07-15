@@ -22,3 +22,6 @@ ALWAYS:	always run color refinement (i.e. replace the colors by possibly better
 	colors by averaging the original colors for the encoded pixels)
 CHECK:	always run color refinement, but only use its result if it is actually
 	a closer match for the block
+LOOP:	always run color refinement, but only use its result if it is actually
+	a closer match for the block; after refining, reassign colors and refine
+	till no change for the better happened

@@ -495,124 +495,74 @@ namespace
 			}
 		}
 
-		int nc0 = 0, na0 = 0, sc0r = 0, sc0g = 0, sc0b = 0, sa0 = 0;
-		int nc1 = 0, na1 = 0, sc1r = 0, sc1g = 0, sc1b = 0, sa1 = 0;
+		bool refined;
+		do
+		{
+			int nc0 = 0, na0 = 0, sc0r = 0, sc0g = 0, sc0b = 0, sa0 = 0;
+			int nc1 = 0, na1 = 0, sc1r = 0, sc1g = 0, sc1b = 0, sa1 = 0;
+			if(refine == REFINE_LOOP)
+				refined = false;
 
-		memset(out, 0, (dxt == DXT1) ? 8 : 16);
-		for(x = 0; x < w; ++x)
-			for(y = 0; y < h; ++y)
-			{
-				int pindex = (x+y*4);
-				c[2].r = rgba[(x + y * iw) * 4 + 2];
-				c[2].g = rgba[(x + y * iw) * 4 + 1];
-				c[2].b = rgba[(x + y * iw) * 4 + 0];
-				ca[2]  = rgba[(x + y * iw) * 4 + 3];
-				switch(dxt)
+			memset(out, 0, (dxt == DXT1) ? 8 : 16);
+			for(x = 0; x < w; ++x)
+				for(y = 0; y < h; ++y)
 				{
-					case DXT5:
-						{
-							int da[4];
-							int bitindex = pindex * 3;
-							da[0] = alpha_dist(ca[0], ca[2]);
-							da[1] = alpha_dist(ca[1], ca[2]);
-							da[2] = alpha_dist(0, ca[2]);
-							da[3] = alpha_dist(255, ca[2]);
-							if(da[2] <= da[0] && da[2] <= da[1] && da[2] <= da[3])
+					int pindex = (x+y*4);
+					c[2].r = rgba[(x + y * iw) * 4 + 2];
+					c[2].g = rgba[(x + y * iw) * 4 + 1];
+					c[2].b = rgba[(x + y * iw) * 4 + 0];
+					ca[2]  = rgba[(x + y * iw) * 4 + 3];
+					switch(dxt)
+					{
+						case DXT5:
 							{
-								// 6
-								++bitindex;
-								out[bitindex / 8 + 2] |= (1 << (bitindex % 8));
-								++bitindex;
-								out[bitindex / 8 + 2] |= (1 << (bitindex % 8));
-							}
-							else if(da[3] <= da[0] && da[3] <= da[1])
-							{
-								// 7
-								out[bitindex / 8 + 2] |= (1 << (bitindex % 8));
-								++bitindex;
-								out[bitindex / 8 + 2] |= (1 << (bitindex % 8));
-								++bitindex;
-								out[bitindex / 8 + 2] |= (1 << (bitindex % 8));
-							}
-							else if(da[0] <= da[1])
-							{
-								// 0
-								if(refine != REFINE_NEVER)
+								int da[4];
+								int bitindex = pindex * 3;
+								da[0] = alpha_dist(ca[0], ca[2]);
+								da[1] = alpha_dist(ca[1], ca[2]);
+								da[2] = alpha_dist(0, ca[2]);
+								da[3] = alpha_dist(255, ca[2]);
+								if(da[2] <= da[0] && da[2] <= da[1] && da[2] <= da[3])
 								{
-									++na0;
-									sa0 += ca[2];
+									// 6
+									++bitindex;
+									out[bitindex / 8 + 2] |= (1 << (bitindex % 8));
+									++bitindex;
+									out[bitindex / 8 + 2] |= (1 << (bitindex % 8));
+								}
+								else if(da[3] <= da[0] && da[3] <= da[1])
+								{
+									// 7
+									out[bitindex / 8 + 2] |= (1 << (bitindex % 8));
+									++bitindex;
+									out[bitindex / 8 + 2] |= (1 << (bitindex % 8));
+									++bitindex;
+									out[bitindex / 8 + 2] |= (1 << (bitindex % 8));
+								}
+								else if(da[0] <= da[1])
+								{
+									// 0
+									if(refine != REFINE_NEVER)
+									{
+										++na0;
+										sa0 += ca[2];
+									}
+								}
+								else
+								{
+									// 1
+									out[bitindex / 8 + 2] |= (1 << (bitindex % 8));
+									if(refine != REFINE_NEVER)
+									{
+										++na1;
+										sa1 += ca[2];
+									}
 								}
 							}
-							else
+							if(ColorDist(c[0], c[2]) > ColorDist(c[1], c[2]))
 							{
-								// 1
-								out[bitindex / 8 + 2] |= (1 << (bitindex % 8));
-								if(refine != REFINE_NEVER)
-								{
-									++na1;
-									sa1 += ca[2];
-								}
-							}
-						}
-						if(ColorDist(c[0], c[2]) > ColorDist(c[1], c[2]))
-						{
-							int bitindex = pindex * 2;
-							out[bitindex / 8 + 12] |= (1 << (bitindex % 8));
-							if(refine != REFINE_NEVER)
-							{
-								++nc1;
-								sc1r += refine_component_encode<ColorDist>(c[2].r);
-								sc1g += refine_component_encode<ColorDist>(c[2].g);
-								sc1b += refine_component_encode<ColorDist>(c[2].b);
-							}
-						}
-						else
-						{
-							if(refine != REFINE_NEVER)
-							{
-								++nc0;
-								sc0r += refine_component_encode<ColorDist>(c[2].r);
-								sc0g += refine_component_encode<ColorDist>(c[2].g);
-								sc0b += refine_component_encode<ColorDist>(c[2].b);
-							}
-						}
-						break;
-					case DXT3:
-						{
-							int bitindex = pindex * 4;
-							out[bitindex / 8 + 0] |= (ca[2] << (bitindex % 8));
-						}
-						if(ColorDist(c[0], c[2]) > ColorDist(c[1], c[2]))
-						{
-							int bitindex = pindex * 2;
-							out[bitindex / 8 + 12] |= (1 << (bitindex % 8));
-							if(refine != REFINE_NEVER)
-							{
-								++nc1;
-								sc1r += refine_component_encode<ColorDist>(c[2].r);
-								sc1g += refine_component_encode<ColorDist>(c[2].g);
-								sc1b += refine_component_encode<ColorDist>(c[2].b);
-							}
-						}
-						else
-						{
-							if(refine != REFINE_NEVER)
-							{
-								++nc0;
-								sc0r += refine_component_encode<ColorDist>(c[2].r);
-								sc0g += refine_component_encode<ColorDist>(c[2].g);
-								sc0b += refine_component_encode<ColorDist>(c[2].b);
-							}
-						}
-						break;
-					case DXT1:
-						{
-							int bitindex = pindex * 2;
-							if(!ca[2])
-								out[bitindex / 8 + 4] |= (3 << (bitindex % 8));
-							else if(ColorDist(c[0], c[2]) > ColorDist(c[1], c[2]))
-							{
-								out[bitindex / 8 + 4] |= (1 << (bitindex % 8));
+								int bitindex = pindex * 2;
+								out[bitindex / 8 + 12] |= (1 << (bitindex % 8));
 								if(refine != REFINE_NEVER)
 								{
 									++nc1;
@@ -631,123 +581,178 @@ namespace
 									sc0b += refine_component_encode<ColorDist>(c[2].b);
 								}
 							}
-						}
-						break;
-				}
-			}
-		if(refine != REFINE_NEVER)
-		{
-			// REFINEMENT: trick from libtxc_dxtn: reassign the colors to an average of the colors encoded with that value
-
-			if(dxt == DXT5)
-			{
-				if(refine == REFINE_CHECK)
-				{
-					ca[2] = ca[0];
-					ca[3] = ca[1];
-				}
-				if(na0)
-					ca[0] = (2 * sa0 + na0) / (2 * na0);
-				if(na1)
-					ca[1] = (2 * sa1 + na1) / (2 * na1);
-			}
-			if(refine == REFINE_CHECK)
-			{
-				c[2] = c[0];
-				c[3] = c[1];
-			}
-			if(nc0)
-			{
-				c[0].r = refine_component_decode<ColorDist>((2 * sc0r + nc0) / (2 * nc0));
-				c[0].g = refine_component_decode<ColorDist>((2 * sc0g + nc0) / (2 * nc0));
-				c[0].b = refine_component_decode<ColorDist>((2 * sc0b + nc0) / (2 * nc0));
-			}
-			if(nc1)
-			{
-				c[1].r = refine_component_decode<ColorDist>((2 * sc1r + nc1) / (2 * nc1));
-				c[1].g = refine_component_decode<ColorDist>((2 * sc1g + nc1) / (2 * nc1));
-				c[1].b = refine_component_decode<ColorDist>((2 * sc1b + nc1) / (2 * nc1));
-			}
-
-			if(refine == REFINE_CHECK)
-			{
-				int score_01 = 0;
-				int score_23 = 0;
-				for(x = 0; x < w; ++x)
-					for(y = 0; y < h; ++y)
-					{
-						int pindex = (x+y*4);
-						c[4].r = rgba[(x + y * iw) * 4 + 2];
-						c[4].g = rgba[(x + y * iw) * 4 + 1];
-						c[4].b = rgba[(x + y * iw) * 4 + 0];
-						ca[4]  = rgba[(x + y * iw) * 4 + 3];
-						if(dxt == DXT1 && !ca[4])
-							continue;
-						int bitindex = pindex * 2;
-						if(out[bitindex / 8 + (dxt == DXT1 ? 4 : 12)] & (1 << (bitindex % 8)))
-						{
-							// we picked an 1
-							score_01 += ColorDist(c[1], c[4]);
-							score_23 += ColorDist(c[3], c[4]);
-						}
-						else
-						{
-							// we picked a 0
-							score_01 += ColorDist(c[0], c[4]);
-							score_23 += ColorDist(c[2], c[4]);
-						}
-					}
-
-				if(score_23 < score_01)
-				{
-					// refinement was BAD
-					c[0] = c[2];
-					c[1] = c[3];
-				}
-
-				// alpha refinement is always good and doesn't
-				// need to be checked because alpha is linear
-			}
-
-			if(dxt == DXT5)
-			{
-				if(ca[1] < ca[0])
-				{
-					ca[2] = ca[0];
-					ca[0] = ca[1];
-					ca[1] = ca[2];
-					// swap the alphas
-					for(int pindex = 0; pindex < 16; ++pindex)
-					{
-						int bitindex_set = pindex * 3;
-						int bitindex_test = bitindex_set + 2;
-						if(!(out[bitindex_test / 8] & (1 << (bitindex_test % 8))))
-							out[bitindex_set / 8] ^= (1 << (bitindex_set % 8));
+							break;
+						case DXT3:
+							{
+								int bitindex = pindex * 4;
+								out[bitindex / 8 + 0] |= (ca[2] << (bitindex % 8));
+							}
+							if(ColorDist(c[0], c[2]) > ColorDist(c[1], c[2]))
+							{
+								int bitindex = pindex * 2;
+								out[bitindex / 8 + 12] |= (1 << (bitindex % 8));
+								if(refine != REFINE_NEVER)
+								{
+									++nc1;
+									sc1r += refine_component_encode<ColorDist>(c[2].r);
+									sc1g += refine_component_encode<ColorDist>(c[2].g);
+									sc1b += refine_component_encode<ColorDist>(c[2].b);
+								}
+							}
+							else
+							{
+								if(refine != REFINE_NEVER)
+								{
+									++nc0;
+									sc0r += refine_component_encode<ColorDist>(c[2].r);
+									sc0g += refine_component_encode<ColorDist>(c[2].g);
+									sc0b += refine_component_encode<ColorDist>(c[2].b);
+								}
+							}
+							break;
+						case DXT1:
+							{
+								int bitindex = pindex * 2;
+								if(!ca[2])
+									out[bitindex / 8 + 4] |= (3 << (bitindex % 8));
+								else if(ColorDist(c[0], c[2]) > ColorDist(c[1], c[2]))
+								{
+									out[bitindex / 8 + 4] |= (1 << (bitindex % 8));
+									if(refine != REFINE_NEVER)
+									{
+										++nc1;
+										sc1r += refine_component_encode<ColorDist>(c[2].r);
+										sc1g += refine_component_encode<ColorDist>(c[2].g);
+										sc1b += refine_component_encode<ColorDist>(c[2].b);
+									}
+								}
+								else
+								{
+									if(refine != REFINE_NEVER)
+									{
+										++nc0;
+										sc0r += refine_component_encode<ColorDist>(c[2].r);
+										sc0g += refine_component_encode<ColorDist>(c[2].g);
+										sc0b += refine_component_encode<ColorDist>(c[2].b);
+									}
+								}
+							}
+							break;
 					}
 				}
-			}
-			if(c[1] < c[0])
+			if(refine != REFINE_NEVER)
 			{
-				c[2] = c[0];
-				c[0] = c[1];
-				c[1] = c[2];
-				// swap the colors
-				if(dxt == DXT1)
+				// REFINEMENT: trick from libtxc_dxtn: reassign the colors to an average of the colors encoded with that value
+
+				if(dxt == DXT5)
 				{
-					out[4] ^= 0x55 & ~(out[4] >> 1);
-					out[5] ^= 0x55 & ~(out[5] >> 1);
-					out[6] ^= 0x55 & ~(out[6] >> 1);
-					out[7] ^= 0x55 & ~(out[7] >> 1);
+					if(na0)
+						ca[0] = (2 * sa0 + na0) / (2 * na0);
+					if(na1)
+						ca[1] = (2 * sa1 + na1) / (2 * na1);
 				}
-				else
+				if(refine == REFINE_CHECK || refine == REFINE_LOOP)
 				{
-					out[12] ^= 0x55 & ~(out[12] >> 1);
-					out[13] ^= 0x55 & ~(out[13] >> 1);
-					out[14] ^= 0x55 & ~(out[14] >> 1);
-					out[15] ^= 0x55 & ~(out[15] >> 1);
+					c[2] = c[0];
+					c[3] = c[1];
+				}
+				if(nc0)
+				{
+					c[0].r = refine_component_decode<ColorDist>((2 * sc0r + nc0) / (2 * nc0));
+					c[0].g = refine_component_decode<ColorDist>((2 * sc0g + nc0) / (2 * nc0));
+					c[0].b = refine_component_decode<ColorDist>((2 * sc0b + nc0) / (2 * nc0));
+				}
+				if(nc1)
+				{
+					c[1].r = refine_component_decode<ColorDist>((2 * sc1r + nc1) / (2 * nc1));
+					c[1].g = refine_component_decode<ColorDist>((2 * sc1g + nc1) / (2 * nc1));
+					c[1].b = refine_component_decode<ColorDist>((2 * sc1b + nc1) / (2 * nc1));
+				}
+
+				if(refine == REFINE_CHECK || refine == REFINE_LOOP)
+				{
+					int score_01 = 0;
+					int score_23 = 0;
+					for(x = 0; x < w; ++x)
+						for(y = 0; y < h; ++y)
+						{
+							int pindex = (x+y*4);
+							c[4].r = rgba[(x + y * iw) * 4 + 2];
+							c[4].g = rgba[(x + y * iw) * 4 + 1];
+							c[4].b = rgba[(x + y * iw) * 4 + 0];
+							ca[4]  = rgba[(x + y * iw) * 4 + 3];
+							if(dxt == DXT1 && !ca[4])
+								continue;
+							int bitindex = pindex * 2;
+							if(out[bitindex / 8 + (dxt == DXT1 ? 4 : 12)] & (1 << (bitindex % 8)))
+							{
+								// we picked an 1
+								score_01 += ColorDist(c[1], c[4]);
+								score_23 += ColorDist(c[3], c[4]);
+							}
+							else
+							{
+								// we picked a 0
+								score_01 += ColorDist(c[0], c[4]);
+								score_23 += ColorDist(c[2], c[4]);
+							}
+						}
+
+					if(score_23 <= score_01)
+					{
+						// refinement was BAD
+						c[0] = c[2];
+						c[1] = c[3];
+					}
+					else if(refine == REFINE_LOOP)
+						refined = true;
+
+					// alpha refinement is always good and doesn't
+					// need to be checked because alpha is linear
+				}
+
+				if(dxt == DXT5)
+				{
+					if(ca[1] < ca[0])
+					{
+						ca[2] = ca[0];
+						ca[0] = ca[1];
+						ca[1] = ca[2];
+						// swap the alphas
+						for(int pindex = 0; pindex < 16; ++pindex)
+						{
+							int bitindex_set = pindex * 3;
+							int bitindex_test = bitindex_set + 2;
+							if(!(out[bitindex_test / 8] & (1 << (bitindex_test % 8))))
+								out[bitindex_set / 8] ^= (1 << (bitindex_set % 8));
+						}
+					}
+				}
+				if(c[1] < c[0])
+				{
+					c[2] = c[0];
+					c[0] = c[1];
+					c[1] = c[2];
+					// swap the colors
+					if(dxt == DXT1)
+					{
+						out[4] ^= 0x55 & ~(out[4] >> 1);
+						out[5] ^= 0x55 & ~(out[5] >> 1);
+						out[6] ^= 0x55 & ~(out[6] >> 1);
+						out[7] ^= 0x55 & ~(out[7] >> 1);
+					}
+					else
+					{
+						out[12] ^= 0x55 & ~(out[12] >> 1);
+						out[13] ^= 0x55 & ~(out[13] >> 1);
+						out[14] ^= 0x55 & ~(out[14] >> 1);
+						out[15] ^= 0x55 & ~(out[15] >> 1);
+					}
 				}
 			}
 		}
+		while(refine == REFINE_LOOP && refined);
+
 		switch(dxt)
 		{
 			case DXT5:
@@ -777,6 +782,10 @@ namespace
 			case REFINE_NEVER:
 				return s2tc_encode_block<dxt, ColorDist, mode, REFINE_NEVER>;
 			case REFINE_CHECK:
+				// these color dist functions do not need the refinement check, as they always improve the situation
+				if(ColorDist != color_dist_avg && ColorDist != color_dist_wavg)
+					return s2tc_encode_block<dxt, ColorDist, mode, REFINE_CHECK>;
+			case REFINE_LOOP:
 				// these color dist functions do not need the refinement check, as they always improve the situation
 				if(ColorDist != color_dist_avg && ColorDist != color_dist_wavg)
 					return s2tc_encode_block<dxt, ColorDist, mode, REFINE_CHECK>;
