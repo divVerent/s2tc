@@ -866,10 +866,9 @@ namespace
 		{
 			case REFINE_NEVER:
 				return s2tc_encode_block<dxt, ColorDist, mode, REFINE_NEVER>;
-			case REFINE_CHECK:
-				if(need_refine_check<ColorDist>())
-					return s2tc_encode_block<dxt, ColorDist, mode, REFINE_CHECK>;
 			case REFINE_LOOP:
+				return s2tc_encode_block<dxt, ColorDist, mode, REFINE_LOOP>;
+			case REFINE_CHECK:
 				if(need_refine_check<ColorDist>())
 					return s2tc_encode_block<dxt, ColorDist, mode, REFINE_CHECK>;
 			default:
