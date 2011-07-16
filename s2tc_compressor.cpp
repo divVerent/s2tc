@@ -750,17 +750,35 @@ namespace
 								}
 							}
 							int bitindex = pindex * 2;
-							if(testbit(&out[(dxt == DXT1 ? 4 : 12)], bitindex))
+							if(refine == REFINE_CHECK)
 							{
-								// we picked an 1
-								score_01 += ColorDist(c[1], c[4]);
-								score_23 += ColorDist(c[3], c[4]);
+								if(testbit(&out[(dxt == DXT1 ? 4 : 12)], bitindex))
+								{
+									// we picked an 1
+									score_01 += ColorDist(c[1], c[4]);
+									score_23 += ColorDist(c[3], c[4]);
+								}
+								else
+								{
+									// we picked a 0
+									score_01 += ColorDist(c[0], c[4]);
+									score_23 += ColorDist(c[2], c[4]);
+								}
 							}
-							else
+							else if(refine == REFINE_LOOP)
 							{
-								// we picked a 0
-								score_01 += ColorDist(c[0], c[4]);
-								score_23 += ColorDist(c[2], c[4]);
+								if(testbit(&out[(dxt == DXT1 ? 4 : 12)], bitindex))
+								{
+									// we picked an 1
+									score_23 += ColorDist(c[3], c[4]);
+								}
+								else
+								{
+									// we picked a 0
+									score_23 += ColorDist(c[2], c[4]);
+								}
+								// we WILL run another loop iteration, if score_01 wins
+								score_01 += min(ColorDist(c[0], c[4]), ColorDist(c[1], c[4]));
 							}
 						}
 
@@ -775,6 +793,11 @@ namespace
 
 					// alpha refinement is always good and doesn't
 					// need to be checked because alpha is linear
+
+					// when looping, though, checking the
+					// alpha COULD help, but we usually
+					// loop twice anyway as refinement
+					// usually helps
 				}
 			}
 		}
