@@ -730,7 +730,7 @@ namespace
 							c[4].r = rgba[(x + y * iw) * 4 + 2];
 							c[4].g = rgba[(x + y * iw) * 4 + 1];
 							c[4].b = rgba[(x + y * iw) * 4 + 0];
-							if(alpha_0_is_unimportant<ColorDist>::value)
+							if(alpha_0_is_unimportant<ColorDist>::value || dxt == DXT1) // in DXT1, alpha 0 pixels are always skipped!
 							{
 								if(dxt == DXT5)
 								{
