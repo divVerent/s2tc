@@ -24,7 +24,8 @@ t()
 }
 
 #t CXX=/opt/ekopath/bin/pathcc CXXFLAGS="-O3" LDFLAGS="/usr/lib/gcc/x86_64-linux-gnu/4.2.4/libstdc++.a"
-#t CXX=icc CXXFLAGS="-O3"
+t CXX=/opt/intel/bin/icc CXXFLAGS="-O3"
+t CXX=/opt/intel/bin/icc CXXFLAGS="-fast"
 t CXX=g++ CXXFLAGS="-O3"
 t CXX=g++ CXXFLAGS="-Ofast"
 t CXX=clang++ CXXFLAGS="-O3"
