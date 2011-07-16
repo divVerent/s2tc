@@ -66,21 +66,21 @@ EOF
 	col=1
 
 	if $use_compressonator; then
-		coltitle "Compressonator"
+		coltitle "compressonator"
 	fi
 	if $use_nvcompress; then
 		coltitle "nvcompress"
 	fi
-	coltitle "rand32-sRGB-mixed-l"
-	coltitle "rand32-wavg-l"
-	coltitle "rand32-avg-l"
+	coltitle "rand32_sRGB_mixed_l"
+	coltitle "rand32_wavg_l"
+	coltitle "rand32_avg_l"
 
 	if $use_libtxc_dxtn; then
 		coltitle "libtxc_dxtn"
 	fi
-	coltitle "norand-wavg-r"
-	coltitle "faster-wavg-r"
-	coltitle "faster-wavg-l"
+	coltitle "norand_wavg_a"
+	coltitle "faster_wavg_a"
+	coltitle "faster_wavg_l"
 
 	echo >&3 "</tr>"
 }
@@ -119,15 +119,6 @@ html()
 	eval "deltatime_$col=\$prevdeltatime"
 	col=$(($col+1))
 }
-html2()
-{
-	bin/s2tc_decompress < "$1" | convert TGA:- -crop 256x256+192+128 "html/$1-s2tc.png"
-	echo >&3 "<td><img src=\"$1-s2tc.png\" alt=\"$1\" title=\"$1$deltatime\"></td>"
-	eval "prevdeltatime=\$deltatime_$col"
-	prevdeltatime=`echo "($prevdeltatime-0)+$deltatime_raw" | bc`
-	eval "deltatime_$col=\$prevdeltatime"
-	col=$(($col+1))
-}
 html_rowend()
 {
 	echo >&3 "</tr>"
@@ -136,6 +127,7 @@ html_end()
 {
 	echo >&3 "<tr><th>Total runtime</th><td>(original)</td>"
 	col=1
+	echo >&4 "good=true"
 	while :; do
 		eval "prevdeltatime=\$deltatime_$col"
 		[ -n "$prevdeltatime" ] || break
