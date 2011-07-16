@@ -9,6 +9,7 @@ lib_LTLIBRARIES = libtxc_dxtn.la
 
 libtxc_dxtn_la_SOURCES = s2tc_compressor.cpp s2tc_libtxc_dxtn.cpp s2tc_common.h s2tc_compressor.h txc_dxtn.h
 libtxc_dxtn_la_LDFLAGS = -versioninfo 0:0:0
+libtxc_dxtn_la_LIBADD = -lm
 libtxc_dxtn_la_CFLAGS = -fvisibility=hidden -Wold-style-definition -Wstrict-prototypes -Wsign-compare -Wdeclaration-after-statement
 
 library_includedir = $(includedir)

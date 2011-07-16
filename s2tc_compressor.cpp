@@ -359,14 +359,14 @@ namespace
 	}
 
 	// these color dist functions ignore color values at alpha 0
-	template<ColorDistFunc ColorDist> inline bool alpha_0_is_unimportant()
+	template<ColorDistFunc ColorDist> struct alpha_0_is_unimportant
 	{
-		return true;
-	}
-	template<> inline bool alpha_0_is_unimportant<color_dist_normalmap>()
+		static bool const value = true;
+	};
+	template<> struct alpha_0_is_unimportant<color_dist_normalmap>
 	{
-		return false;
-	}
+		static bool const value = false;
+	};
 
 	template<DxtMode dxt, ColorDistFunc ColorDist, CompressionMode mode, RefinementMode refine>
 	inline void s2tc_encode_block(unsigned char *out, const unsigned char *rgba, int iw, int w, int h, int nrandom)
@@ -442,7 +442,7 @@ namespace
 				for(y = 0; y < h; ++y)
 				{
 					ca[n]  = rgba[(x + y * iw) * 4 + 3];
-					if(alpha_0_is_unimportant<ColorDist>())
+					if(alpha_0_is_unimportant<ColorDist>::value)
 						if(!ca[n])
 							continue;
 					c[n].r = rgba[(x + y * iw) * 4 + 2];
@@ -564,7 +564,7 @@ namespace
 									setbit(&out[2], bitindex);
 									++bitindex;
 									setbit(&out[2], bitindex);
-									if(alpha_0_is_unimportant<ColorDist>())
+									if(alpha_0_is_unimportant<ColorDist>::value)
 										visible = false;
 								}
 								else if(da[3] <= da[0] && da[3] <= da[1])
@@ -601,7 +601,7 @@ namespace
 									setbit(&out[12], bitindex);
 									if(refine != REFINE_NEVER)
 									{
-										if(!alpha_0_is_unimportant<ColorDist>() || visible)
+										if(!alpha_0_is_unimportant<ColorDist>::value || visible)
 										{
 											++nc1;
 											sc1r += refine_component_encode<ColorDist>(c[2].r);
@@ -614,7 +614,7 @@ namespace
 								{
 									if(refine != REFINE_NEVER)
 									{
-										if(!alpha_0_is_unimportant<ColorDist>() || visible)
+										if(!alpha_0_is_unimportant<ColorDist>::value || visible)
 										{
 											++nc0;
 											sc0r += refine_component_encode<ColorDist>(c[2].r);
@@ -636,7 +636,7 @@ namespace
 								setbit(&out[12], bitindex);
 								if(refine != REFINE_NEVER)
 								{
-									if(!alpha_0_is_unimportant<ColorDist>() || ca[2])
+									if(!alpha_0_is_unimportant<ColorDist>::value || ca[2])
 									{
 										++nc1;
 										sc1r += refine_component_encode<ColorDist>(c[2].r);
@@ -649,7 +649,7 @@ namespace
 							{
 								if(refine != REFINE_NEVER)
 								{
-									if(!alpha_0_is_unimportant<ColorDist>() || ca[2])
+									if(!alpha_0_is_unimportant<ColorDist>::value || ca[2])
 									{
 										++nc0;
 										sc0r += refine_component_encode<ColorDist>(c[2].r);
@@ -730,7 +730,7 @@ namespace
 							c[4].r = rgba[(x + y * iw) * 4 + 2];
 							c[4].g = rgba[(x + y * iw) * 4 + 1];
 							c[4].b = rgba[(x + y * iw) * 4 + 0];
-							if(!alpha_0_is_unimportant<ColorDist>())
+							if(!alpha_0_is_unimportant<ColorDist>::value)
 							{
 								if(dxt == DXT5)
 								{
@@ -845,18 +845,18 @@ namespace
 	}
 
 	// these color dist functions do not need the refinement check, as they always improve the situation
-	template<ColorDistFunc ColorDist> inline bool need_refine_check()
+	template<ColorDistFunc ColorDist> struct need_refine_check
 	{
-		return true;
-	}
-	template<> inline bool need_refine_check<color_dist_avg>()
+		static const bool value = true;
+	};
+	template<> struct need_refine_check<color_dist_avg>
 	{
-		return false;
-	}
-	template<> inline bool need_refine_check<color_dist_wavg>()
+		static const bool value = false;
+	};
+	template<> struct need_refine_check<color_dist_wavg>
 	{
-		return false;
-	}
+		static const bool value = false;
+	};
 
 	// compile time dispatch magic
 	template<DxtMode dxt, ColorDistFunc ColorDist, CompressionMode mode>
@@ -869,7 +869,7 @@ namespace
 			case REFINE_LOOP:
 				return s2tc_encode_block<dxt, ColorDist, mode, REFINE_LOOP>;
 			case REFINE_CHECK:
-				if(need_refine_check<ColorDist>())
+				if(need_refine_check<ColorDist>::value)
 					return s2tc_encode_block<dxt, ColorDist, mode, REFINE_CHECK>;
 			default:
 			case REFINE_ALWAYS:
@@ -878,21 +878,21 @@ namespace
 	}
 
 	// these color dist functions do not need the refinement check, as they always improve the situation
-	template<ColorDistFunc ColorDist> inline bool supports_fast()
+	template<ColorDistFunc ColorDist> struct supports_fast
 	{
-		return true;
-	}
-	template<> inline bool need_refine_check<color_dist_normalmap>()
+		static const bool value = true;
+	};
+	template<> struct need_refine_check<color_dist_normalmap>
 	{
-		return false;
-	}
+		static const bool value = false;
+	};
 
 	template<DxtMode dxt, ColorDistFunc ColorDist>
 	inline s2tc_encode_block_func_t s2tc_encode_block_func(int nrandom, RefinementMode refine)
 	{
 		if(nrandom > 0)
 			return s2tc_encode_block_func<dxt, ColorDist, MODE_RANDOM>(refine);
-		else if(!supports_fast<ColorDist>() || nrandom == 0) // MODE_FAST not supported for normalmaps, sorry
+		else if(!supports_fast<ColorDist>::value || nrandom == 0) // MODE_FAST not supported for normalmaps, sorry
 			return s2tc_encode_block_func<dxt, ColorDist, MODE_NORMAL>(refine);
 		else
 			return s2tc_encode_block_func<dxt, ColorDist, MODE_FAST>(refine);
