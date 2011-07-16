@@ -589,12 +589,14 @@ int main(int argc, char **argv)
 	}
 
 	{
+		bool alphapixels = true; // FIXME
+
 		uint32_t picsize = LittleLong(((image_width+3)/4) * ((image_height+3)/4) * blocksize);
 		uint32_t ddssize = LittleLong(0x7c);
 		uint32_t dds_flags = LittleLong(0xa1007);
 		uint32_t one = LittleLong(1);
 		uint32_t zero = LittleLong(0);
-		uint32_t dds_format_flags = LittleLong(0x04);
+		uint32_t dds_format_flags = LittleLong(alphapixels ? 0x05 : 0x04);
 		uint32_t dds_caps1 = LittleLong(0x401008);
 		uint32_t dds_caps2 = LittleLong(0);
 		uint32_t dds_format_size = LittleLong(32);
@@ -627,13 +629,13 @@ int main(int argc, char **argv)
 		fwrite(&dds_format_size, 4, 1, outfh);
 		fwrite(&dds_format_flags, 4, 1, outfh);
 		fwrite(fourcc, 4, 1, outfh);
-		fwrite("\x18\x00\x00\x00", 4, 1, outfh);
+		fwrite(alphapixels ? "\x20\x00\x00\x00" : "\x18\x00\x00\x00", 4, 1, outfh);
 		fwrite("\x00\x00\xff\x00", 4, 1, outfh);
 
 		//96
 		fwrite("\x00\xff\x00\x00", 4, 1, outfh);
 		fwrite("\xff\x00\x00\x00", 4, 1, outfh);
-		fwrite(&zero, 4, 1, outfh);
+		fwrite(alphapixels ? "\x00\x00\x00\xff" : "\x00\x00\x00\x00", 4, 1, outfh);
 		fwrite(&dds_caps1, 4, 1, outfh);
 		fwrite(&dds_caps2, 4, 1, outfh);
 		fwrite(&zero, 4, 1, outfh);
