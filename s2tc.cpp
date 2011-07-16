@@ -589,23 +589,28 @@ int main(int argc, char **argv)
 	}
 
 	{
-		bool alphapixels = true; // FIXME
+		bool alphapixels = false;
+		for(int y = 0; y < image_height; ++y)
+			for(int x = 0; x < image_width; ++x)
+				if(picdata[(y*image_width+x)*4+3] != 255)
+				{
+					alphapixels = true;
+					break;
+				}
 
-		uint32_t picsize = LittleLong(((image_width+3)/4) * ((image_height+3)/4) * blocksize);
-		uint32_t one = LittleLong(1);
 		uint32_t zero = LittleLong(0);
-		uint32_t dds_format_flags = LittleLong(alphapixels ? 0x05 : 0x04);
-		uint32_t dds_caps1 = LittleLong(0x401008);
-		uint32_t dds_format_size = LittleLong(32);
+		uint32_t dds_picsize = LittleLong(((image_width+3)/4) * ((image_height+3)/4) * blocksize);
 		uint32_t dds_mipcount = LittleLong(mipcount);
+		uint32_t dds_width = LittleLong(image_width);
+		uint32_t dds_height = LittleLong(image_height);
 
 		//0
 		fwrite("DDS ", 4, 1, outfh);
 		fwrite("\x7c\x00\x00\x00", 4, 1, outfh);
 		fwrite("\x07\x10\x0a\x00", 4, 1, outfh);
-		fwrite(&image_height, 4, 1, outfh);
-		fwrite(&image_width, 4, 1, outfh);
-		fwrite(&picsize, 4, 1, outfh);
+		fwrite(&dds_height, 4, 1, outfh);
+		fwrite(&dds_width, 4, 1, outfh);
+		fwrite(&dds_picsize, 4, 1, outfh);
 		fwrite(&zero, 4, 1, outfh);
 		fwrite(&dds_mipcount, 4, 1, outfh);
 
@@ -623,7 +628,7 @@ int main(int argc, char **argv)
 		fwrite(&zero, 4, 1, outfh);
 		fwrite(&zero, 4, 1, outfh);
 		fwrite(&zero, 4, 1, outfh);
-		fwrite(&dds_format_size, 4, 1, outfh);
+		fwrite("\x20\x00\x00\x00", 4, 1, outfh);
 		fwrite(alphapixels ? "\x05\x00\x00\x00" : "\x04\x00\x00\x00", 4, 1, outfh);
 		fwrite(fourcc, 4, 1, outfh);
 		fwrite(&zero, 4, 1, outfh);
