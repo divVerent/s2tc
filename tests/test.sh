@@ -2,10 +2,13 @@
 
 set -e
 
+exec 4>&1
+exec 1>&2
+
 cd ..
 make clean || true
 sh autogen.sh
-./configure --prefix="`pwd`/tests" --enable-shared --disable-static CXXFLAGS="-O3"
+./configure --prefix="`pwd`/tests" --enable-shared --disable-static "$@"
 make
 make install
 cd tests
@@ -60,22 +63,24 @@ EOF
 	echo >&3 "<tr><th>Picture</th>"
 	echo >&3 "<th>Original</th>"
 
+	col=1
+
 	if $use_compressonator; then
-		echo >&3 "<th>Compressonator</th>"
+		coltitle "Compressonator"
 	fi
 	if $use_nvcompress; then
-		echo >&3 "<th>nvcompress</th>"
+		coltitle "nvcompress"
 	fi
-	echo >&3 "<th>rand32-sRGB-mixed-l</th>"
-	echo >&3 "<th>rand32-wavg-l</th>"
-	echo >&3 "<th>rand32-avg-l</th>"
+	coltitle "rand32-sRGB-mixed-l"
+	coltitle "rand32-wavg-l"
+	coltitle "rand32-avg-l"
 
 	if $use_libtxc_dxtn; then
-		echo >&3 "<th>libtxc_dxtn</th>"
+		coltitle "libtxc_dxtn"
 	fi
-	echo >&3 "<th>norand-wavg-r</th>"
-	echo >&3 "<th>faster-wavg-r</th>"
-	echo >&3 "<th>faster-wavg-l</th>"
+	coltitle "norand-wavg-r"
+	coltitle "faster-wavg-r"
+	coltitle "faster-wavg-l"
 
 	echo >&3 "</tr>"
 }
@@ -99,6 +104,12 @@ decompress()
 	esac
 }
 
+coltitle()
+{
+	echo >&3 "<th>$1</th>"
+	eval "title_$col=\$1"
+	col=$(($col+1))
+}
 html()
 {
 	decompress "$1" | convert TGA:- -crop 256x256+192+128 "html/$1.png"
@@ -128,7 +139,9 @@ html_end()
 	while :; do
 		eval "prevdeltatime=\$deltatime_$col"
 		[ -n "$prevdeltatime" ] || break
+		eval "title=\$title_$col"
 		deltatime=`echo "scale=3; $prevdeltatime / 1000000000" | bc -l`
+		echo >&4 "$title=$deltatime"
 		echo >&3 "<td>$deltatime seconds</td>"
 		col=$(($col+1))
 	done
@@ -153,17 +166,18 @@ t()
 	html "$out"
 }
 
-if which nvcompress >/dev/null 2>&1; then
+: ${use_external:=true}
+if $use_external && which nvcompress >/dev/null 2>&1; then
 	use_nvcompress=true
 else
 	use_nvcompress=false
 fi
-if which wine >/dev/null 2>&1 && [ -f "$HOME/.wine/drive_c/Program Files (x86)/AMD/The Compressonator 1.50/TheCompressonator.exe" ]; then
+if $use_external && which wine >/dev/null 2>&1 && [ -f "$HOME/.wine/drive_c/Program Files (x86)/AMD/The Compressonator 1.50/TheCompressonator.exe" ]; then
 	use_compressonator=true
 else
 	use_compressonator=false
 fi
-if [ -f /usr/lib/libtxc_dxtn.so ]; then
+if $use_external && [ -f /usr/lib/libtxc_dxtn.so ]; then
 	use_libtxc_dxtn=true
 else
 	use_libtxc_dxtn=false
