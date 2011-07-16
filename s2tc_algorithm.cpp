@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "s2tc_compressor.h"
+#include "s2tc_algorithm.h"
 #include "s2tc_common.h"
 
 namespace

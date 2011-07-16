@@ -6,7 +6,7 @@ extern "C"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "s2tc_compressor.h"
+#include "s2tc_algorithm.h"
 #include "s2tc_common.h"
 
 void fetch_2d_texel_rgb_dxt1(GLint srcRowStride, const GLubyte *pixdata,
