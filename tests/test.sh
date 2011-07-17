@@ -158,19 +158,19 @@ t()
 
 : ${use_external:=true}
 if $use_external && which nvcompress >/dev/null 2>&1; then
-	use_nvcompress=true
+	: ${use_nvcompress:=true}
 else
-	use_nvcompress=false
+	: ${use_nvcompress:=false}
 fi
 if $use_external && which wine >/dev/null 2>&1 && [ -f "$HOME/.wine/drive_c/Program Files (x86)/AMD/The Compressonator 1.50/TheCompressonator.exe" ]; then
-	use_compressonator=true
+	: ${use_compressonator:=true}
 else
-	use_compressonator=false
+	: ${use_compressonator:=false}
 fi
 if $use_external && [ -f /usr/lib/libtxc_dxtn.so ]; then
-	use_libtxc_dxtn=true
+	: ${use_libtxc_dxtn:=true}
 else
-	use_libtxc_dxtn=false
+	: ${use_libtxc_dxtn:=false}
 fi
 
 html_start
