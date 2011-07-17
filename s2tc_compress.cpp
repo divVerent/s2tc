@@ -592,7 +592,7 @@ int main(int argc, char **argv)
 		bool alphapixels = false;
 		for(int y = 0; y < image_height; ++y)
 			for(int x = 0; x < image_width; ++x)
-				if(picdata[(y*image_width+x)*4+3] != 255)
+				if(pic[(y*image_width+x)*4+3] != 255)
 				{
 					alphapixels = true;
 					break;
