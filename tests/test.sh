@@ -183,18 +183,12 @@ xon()
 		wget -O- "http://git.xonotic.org/?p=xonotic/xonotic-maps.pk3dir.git;a=blob_plain;f=$1" | convert "${1##*.}":- -geometry 512x512 "$2"
 	fi
 }
-# floor_tread01: GPLv2+
-xon textures/exx/floor/floor_tread01.tga floor_tread01.tga
 # floor_tread01_norm: GPLv2+
-xon textures/exx/floor/floor_tread01_norm.tga floor_tread01_norm_dxt1.tga
-xon textures/exx/floor/floor_tread01_norm.tga floor_tread01_norm_dxt3.tga
-xon textures/exx/floor/floor_tread01_norm.tga floor_tread01_norm_dxt5.tga
+xon textures/exx/floor/floor_tread01_norm.tga floor_tread01_norm.tga
 # base_concrete1a: GPLv2+
 xon textures/trak4x/base/base_concrete1a.tga base_concrete1a.tga
 # disabled: GPLv2+
 xon textures/screens/screen_toggle0.tga disabled.tga
-# floor_tile3a: GPLv2+
-xon textures/trak4x/floor/floor_tile3a.tga floor_tile3a.tga
 # lift02: GPLv2+
 xon textures/facility114x/misc/lift02.tga lift02.tga
 # sunset: GPLv2+
@@ -208,7 +202,7 @@ if ! [ -f "ba_grass_cc.tga" ]; then
 	wget -O- http://sauerbraten.svn.sourceforge.net/viewvc/sauerbraten/packages/blindabuser/ba_grass_cc.jpg | convert JPG:- ba_grass_cc.tga
 fi
 
-for i in ba_grass_cc dxtfail floor_tread01 floor_tread01_norm_dxt5 floor_tread01_norm_dxt3 floor_tread01_norm_dxt1 fract001 base_concrete1a disabled floor_tile3a lift02 sunset amelia noise noise_solid supernova; do
+for i in ba_grass_cc dxtfail floor_tread01_norm fract001 base_concrete1a disabled lift02 sunset amelia noise noise_solid supernova; do
 	html_rowstart "$i"
 
 	html "$i".tga
@@ -216,25 +210,11 @@ for i in ba_grass_cc dxtfail floor_tread01 floor_tread01_norm_dxt5 floor_tread01
 	case "$i" in
 		*_norm*)
 			goodmetric=NORMALMAP
-			;;
-		*)
-			goodmetric=SRGB_MIXED
-			;;
-	esac
-	case "$i" in
-		*_dxt5)
 			fourcc=DXT5
 			nvopts="-bc3 -alpha"
 			;;
-		*_dxt3)
-			fourcc=DXT3
-			nvopts="-bc2 -alpha"
-			;;
-		*_dxt1)
-			fourcc=DXT1
-			nvopts="-bc1a -alpha"
-			;;
 		*)
+			goodmetric=SRGB_MIXED
 			fourcc=DXT1
 			nvopts="-bc1"
 			;;
