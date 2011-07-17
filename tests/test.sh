@@ -65,6 +65,7 @@ EOF
 
 	col=1
 
+	coltitle "4bpp"
 	if $use_compressonator; then
 		coltitle "compressonator"
 	fi
@@ -205,8 +206,12 @@ xon env/distant_sunset/distant_sunset_rt.jpg sunset.tga
 if ! [ -f "amelia.tga" ]; then
 	wget -O- "http://www.godoon.com/gallery/media/slayers/amelia-wil-tesla-saillune/49212997-d81e-11df-8228-a8bfc396a36f.jpg" | convert JPG:- amelia.tga
 fi
+# grass: no license
+if ! [ -f "ba_grass_cc.tga" ]; then
+	wget -O- http://sauerbraten.svn.sourceforge.net/viewvc/sauerbraten/packages/blindabuser/ba_grass_cc.jpg | convert JPG:- ba_grass_cc.tga
+fi
 
-for i in dxtfail floor_tread01 floor_tread01_norm_dxt5 floor_tread01_norm_dxt3 floor_tread01_norm_dxt1 fract001 base_concrete1a disabled floor_tile3a lift02 sunset amelia noise noise_solid supernova; do
+for i in ba_grass_cc dxtfail floor_tread01 floor_tread01_norm_dxt5 floor_tread01_norm_dxt3 floor_tread01_norm_dxt1 fract001 base_concrete1a disabled floor_tile3a lift02 sunset amelia noise noise_solid supernova; do
 	html_rowstart "$i"
 
 	html "$i".tga
@@ -237,6 +242,8 @@ for i in dxtfail floor_tread01 floor_tread01_norm_dxt5 floor_tread01_norm_dxt3 f
 			nvopts="-bc1"
 			;;
 	esac
+
+	t "$i".tga "$i"-16colors.tga convert TGA:- -colors 16 TGA:-
 
 	if $use_compressonator; then
 		timing wine "c:/Program Files (x86)/AMD/The Compressonator 1.50/TheCompressonator.exe" -convert -overwrite -mipmaps "$i".tga "$i"-amdcompress.dds -codec DXTC.dll +fourCC $fourcc -mipper BoxFilter.dll
