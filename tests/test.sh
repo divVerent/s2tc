@@ -73,13 +73,10 @@ EOF
 		coltitle "nvcompress"
 	fi
 	coltitle "rand32_sRGB_mixed_l"
-	coltitle "rand32_wavg_l"
-	coltitle "rand32_avg_l"
 
 	if $use_libtxc_dxtn; then
 		coltitle "libtxc_dxtn"
 	fi
-	coltitle "norand_wavg_a"
 	coltitle "faster_wavg_a"
 	coltitle "faster_wavg_l"
 
@@ -256,13 +253,10 @@ for i in ba_grass_cc dxtfail floor_tread01 floor_tread01_norm_dxt5 floor_tread01
 	fi
 
 	S2TC_COLORDIST_MODE=$goodmetric S2TC_RANDOM_COLORS=32 S2TC_REFINE_COLORS=LOOP   t "$i".tga "$i"-rand32-mrgb-l.dds bin/s2tc_compress -t $fourcc
-	S2TC_COLORDIST_MODE=WAVG        S2TC_RANDOM_COLORS=32 S2TC_REFINE_COLORS=LOOP   t "$i".tga "$i"-rand32-wavg-l.dds bin/s2tc_compress -t $fourcc
-	S2TC_COLORDIST_MODE=AVG         S2TC_RANDOM_COLORS=32 S2TC_REFINE_COLORS=LOOP   t "$i".tga "$i"-rand32-avg-l.dds  bin/s2tc_compress -t $fourcc
 	if $use_libtxc_dxtn; then
 		LD_PRELOAD=/usr/lib/libtxc_dxtn.so                                      t "$i".tga "$i"-libtxc_dxtn.dds   bin/s2tc_compress -t $fourcc
 		unset LD_PRELOAD
 	fi
-	S2TC_COLORDIST_MODE=WAVG        S2TC_RANDOM_COLORS=0  S2TC_REFINE_COLORS=ALWAYS t "$i".tga "$i"-norand-wavg-r.dds bin/s2tc_compress -t $fourcc
 	S2TC_COLORDIST_MODE=WAVG        S2TC_RANDOM_COLORS=-1 S2TC_REFINE_COLORS=ALWAYS t "$i".tga "$i"-faster-wavg-r.dds bin/s2tc_compress -t $fourcc
 	S2TC_COLORDIST_MODE=WAVG        S2TC_RANDOM_COLORS=-1 S2TC_REFINE_COLORS=LOOP   t "$i".tga "$i"-faster-wavg-l.dds bin/s2tc_compress -t $fourcc
 
