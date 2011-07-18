@@ -1031,8 +1031,8 @@ namespace
 		int e3 = (err * 3 + 4) / 9;
 		err -= e3;
 		int e5 = (err * 5 + 3) / 6;
-		int e1 = err;
 		err -= e5;
+		int e1 = err;
 		thisrow[2] += e7;
 		downrow[0] += e3;
 		downrow[1] += e5;
@@ -1053,8 +1053,8 @@ namespace
 		int e3 = (err * 3 + 4) / 9;
 		err -= e3;
 		int e5 = (err * 5 + 3) / 6;
-		int e1 = err;
 		err -= e5;
+		int e1 = err;
 		thisrow[2] += e7;
 		downrow[0] += e3;
 		downrow[1] += e5;
