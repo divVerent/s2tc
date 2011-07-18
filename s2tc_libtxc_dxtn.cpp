@@ -157,15 +157,15 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 		case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
 		case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
 			dxt = DXT1;
-			rgb565_image(rgba, srcPixData, width, height, srccomps, 0, 1);
+			rgb565_image(rgba, srcPixData, width, height, srccomps, 0, 1, DITHER_SIMPLE);
 			break;
 		case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
 			dxt = DXT3;
-			rgb565_image(rgba, srcPixData, width, height, srccomps, 0, 4);
+			rgb565_image(rgba, srcPixData, width, height, srccomps, 0, 4, DITHER_SIMPLE);
 			break;
 		case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
 			dxt = DXT5;
-			rgb565_image(rgba, srcPixData, width, height, srccomps, 0, 8);
+			rgb565_image(rgba, srcPixData, width, height, srccomps, 0, 8, DITHER_SIMPLE);
 			break;
 		default:
 			free(rgba);
