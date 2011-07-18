@@ -999,7 +999,7 @@ namespace
 {
 	inline int diffuse(int *diff, int src, int shift)
 	{
-		int maxval = (1 << (8 - shift)) - 1;
+		const int maxval = (1 << (8 - shift)) - 1;
 		src += *diff;
 		int ret = max(0, min(src >> shift, maxval));
 		// simulate decoding ("loop filter")
@@ -1011,8 +1011,54 @@ namespace
 	{
 		src += *diff;
 		int ret = (src >= 128);
+		// simulate decoding ("loop filter")
 		int loop = ret ? 255 : 0;
 		*diff = src - loop;
+		return ret;
+	}
+
+	inline int floyd(int *thisrow, int *downrow, int src, int shift)
+	{
+		const int maxval = (1 << (8 - shift)) - 1;
+		src = (src << 4) | (src >> 4);
+		src += thisrow[1];
+		int ret = max(0, min(src >> (shift + 4), maxval));
+		// simulate decoding ("loop filter")
+		int loop = (ret * 4095 / maxval);
+		int err = src - loop;
+		int e7 = (err * 7 + 8) / 16;
+		err -= e7;
+		int e3 = (err * 3 + 4) / 9;
+		err -= e3;
+		int e5 = (err * 5 + 3) / 6;
+		int e1 = err;
+		err -= e5;
+		thisrow[2] += e7;
+		downrow[0] += e3;
+		downrow[1] += e5;
+		downrow[2] += e1;
+		return ret;
+	}
+
+	inline int floyd1(int *thisrow, int *downrow, int src)
+	{
+		src = (src << 4) | (src >> 4);
+		src += thisrow[1];
+		int ret = (src >= 2048);
+		// simulate decoding ("loop filter")
+		int loop = ret ? 4095 : 0;
+		int err = src - loop;
+		int e7 = (err * 7 + 8) / 16;
+		err -= e7;
+		int e3 = (err * 3 + 4) / 9;
+		err -= e3;
+		int e5 = (err * 5 + 3) / 6;
+		int e1 = err;
+		err -= e5;
+		thisrow[2] += e7;
+		downrow[0] += e3;
+		downrow[1] += e5;
+		downrow[2] += e1;
 		return ret;
 	}
 
@@ -1130,6 +1176,91 @@ namespace
 					}
 				}
 				break;
+			case DITHER_FLOYDSTEINBERG:
+				{
+					int x, y;
+					int pw = w+2;
+					int downrow[6*pw];
+					memset(downrow, 0, sizeof(downrow));
+					int *thisrow_r, *thisrow_g, *thisrow_b, *thisrow_a;
+					int *downrow_r, *downrow_g, *downrow_b, *downrow_a;
+					if(bgr)
+					{
+						for(y = 0; y < h; ++y)
+						{
+							thisrow_r = downrow + ((y&1)?3:0) * pw;
+							downrow_r = downrow + ((y&1)?0:3) * pw;
+							memset(downrow_r, 0, sizeof(*downrow_r) * (3*pw));
+							thisrow_g = thisrow_r + pw;
+							thisrow_b = thisrow_g + pw;
+							downrow_g = downrow_r + pw;
+							downrow_b = downrow_g + pw;
+							for(x = 0; x < w; ++x)
+							{
+								out[(x + y * w) * 4 + 2] = floyd(&thisrow_r[x], &downrow_r[x], rgba[(x + y * w) * srccomps + 2], 3);
+								out[(x + y * w) * 4 + 1] = floyd(&thisrow_g[x], &downrow_g[x], rgba[(x + y * w) * srccomps + 1], 2);
+								out[(x + y * w) * 4 + 0] = floyd(&thisrow_b[x], &downrow_b[x], rgba[(x + y * w) * srccomps + 0], 3);
+							}
+						}
+					}
+					else
+					{
+						for(y = 0; y < h; ++y)
+						{
+							thisrow_r = downrow + ((y&1)?3:0) * pw;
+							downrow_r = downrow + ((y&1)?0:3) * pw;
+							memset(downrow_r, 0, sizeof(*downrow_r) * (3*pw));
+							thisrow_g = thisrow_r + pw;
+							thisrow_b = thisrow_g + pw;
+							downrow_g = downrow_r + pw;
+							downrow_b = downrow_g + pw;
+							for(x = 0; x < w; ++x)
+							{
+								out[(x + y * w) * 4 + 2] = floyd(&thisrow_r[x], &downrow_r[x], rgba[(x + y * w) * srccomps + 0], 3);
+								out[(x + y * w) * 4 + 1] = floyd(&thisrow_g[x], &downrow_g[x], rgba[(x + y * w) * srccomps + 1], 2);
+								out[(x + y * w) * 4 + 0] = floyd(&thisrow_b[x], &downrow_b[x], rgba[(x + y * w) * srccomps + 2], 3);
+							}
+						}
+					}
+					if(srccomps == 4)
+					{
+						if(alphabits == 1)
+						{
+							for(y = 0; y < h; ++y)
+							{
+								thisrow_a = downrow + (y&1) * pw;
+								downrow_a = downrow + !(y&1) * pw;
+								memset(downrow_a, 0, sizeof(*downrow_a) * pw);
+								for(x = 0; x < w; ++x)
+									out[(x + y * w) * 4 + 3] = floyd1(&thisrow_a[x], &downrow_a[x], rgba[(x + y * w) * srccomps + 3]);
+							}
+						}
+						else if(alphabits == 8)
+						{
+							for(y = 0; y < h; ++y)
+								for(x = 0; x < w; ++x)
+									out[(x + y * w) * 4 + 3] = rgba[(x + y * w) * srccomps + 3]; // no conversion
+						}
+						else
+						{
+							for(y = 0; y < h; ++y)
+							{
+								thisrow_a = downrow + (y&1) * pw;
+								downrow_a = downrow + !(y&1) * pw;
+								memset(downrow_a, 0, sizeof(*downrow_a) * pw);
+								for(x = 0; x < w; ++x)
+									out[(x + y * w) * 4 + 3] = floyd(&thisrow_a[x], &downrow_a[x], rgba[(x + y * w) * srccomps + 3], 8 - alphabits);
+							}
+						}
+					}
+					else
+					{
+						for(y = 0; y < h; ++y)
+							for(x = 0; x < w; ++x)
+								out[(x + y * w) * 4 + 3] = (1 << alphabits) - 1;
+					}
+				}
+				break;
 		}
 	}
 
@@ -1144,6 +1275,9 @@ namespace
 			default:
 			case DITHER_SIMPLE:
 				rgb565_image<srccomps, bgr, alphabits, DITHER_SIMPLE>(out, rgba, w, h);
+				break;
+			case DITHER_FLOYDSTEINBERG:
+				rgb565_image<srccomps, bgr, alphabits, DITHER_FLOYDSTEINBERG>(out, rgba, w, h);
 				break;
 		}
 	}

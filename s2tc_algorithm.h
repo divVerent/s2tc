@@ -31,7 +31,8 @@ extern "C" {
 enum DitherMode
 {
 	DITHER_NONE,
-	DITHER_SIMPLE
+	DITHER_SIMPLE,
+	DITHER_FLOYDSTEINBERG
 };
 
 void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h, int srccomps, bool bgr, int alphabits, DitherMode dither);

@@ -153,29 +153,24 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 	unsigned char *srcaddr;
 	DxtMode dxt;
 
-	switch (destformat) {
-		case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
-		case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
-			dxt = DXT1;
-			rgb565_image(rgba, srcPixData, width, height, srccomps, 0, 1, DITHER_SIMPLE);
-			break;
-		case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
-			dxt = DXT3;
-			rgb565_image(rgba, srcPixData, width, height, srccomps, 0, 4, DITHER_SIMPLE);
-			break;
-		case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
-			dxt = DXT5;
-			rgb565_image(rgba, srcPixData, width, height, srccomps, 0, 8, DITHER_SIMPLE);
-			break;
-		default:
-			free(rgba);
-			fprintf(stderr, "libdxtn: Bad dstFormat %d in tx_compress_dxtn\n", destformat);
-			return;
-	}
-
 	ColorDistMode cd = WAVG;
 	int nrandom = -1;
 	RefinementMode refine = REFINE_ALWAYS;
+	DitherMode dither = DITHER_SIMPLE;
+	{
+		const char *v = getenv("S2TC_DITHER_MODE");
+		if(v)
+		{
+			if(!strcasecmp(v, "NONE"))
+				dither = DITHER_NONE;
+			else if(!strcasecmp(v, "SIMPLE"))
+				dither = DITHER_SIMPLE;
+			else if(!strcasecmp(v, "FLOYDSTEINBERG"))
+				dither = DITHER_FLOYDSTEINBERG;
+			else
+				fprintf(stderr, "Invalid dither mode: %s\n", v);
+		}
+	}
 	{
 		const char *v = getenv("S2TC_COLORDIST_MODE");
 		if(v)
@@ -220,6 +215,26 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 			else
 				fprintf(stderr, "Invalid refinement mode: %s\n", v);
 		}
+	}
+
+	switch (destformat) {
+		case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
+		case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
+			dxt = DXT1;
+			rgb565_image(rgba, srcPixData, width, height, srccomps, 0, 1, dither);
+			break;
+		case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
+			dxt = DXT3;
+			rgb565_image(rgba, srcPixData, width, height, srccomps, 0, 4, dither);
+			break;
+		case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
+			dxt = DXT5;
+			rgb565_image(rgba, srcPixData, width, height, srccomps, 0, 8, dither);
+			break;
+		default:
+			free(rgba);
+			fprintf(stderr, "libdxtn: Bad dstFormat %d in tx_compress_dxtn\n", destformat);
+			return;
 	}
 
 	s2tc_encode_block_func_t encode_block = s2tc_encode_block_func(dxt, cd, nrandom, refine);
