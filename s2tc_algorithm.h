@@ -57,7 +57,6 @@ typedef enum
 	YUV,
 	SRGB,
 	SRGB_MIXED,
-	LAB,
 	AVG,
 	WAVG,
 	NORMALMAP

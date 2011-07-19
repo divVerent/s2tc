@@ -146,37 +146,6 @@ namespace
 		// weight for v: ???
 	}
 
-	// FIXME this is likely broken
-	inline int color_dist_lab_srgb(const color_t &a, const color_t &b)
-	{
-		// undo sRGB
-		float ar = powf(a.r / 31.0f, 2.4f);
-		float ag = powf(a.g / 63.0f, 2.4f);
-		float ab = powf(a.b / 31.0f, 2.4f);
-		float br = powf(b.r / 31.0f, 2.4f);
-		float bg = powf(b.g / 63.0f, 2.4f);
-		float bb = powf(b.b / 31.0f, 2.4f);
-		// convert to CIE XYZ
-		float aX = 0.4124f * ar + 0.3576f * ag + 0.1805f * ab;
-		float aY = 0.2126f * ar + 0.7152f * ag + 0.0722f * ab;
-		float aZ = 0.0193f * ar + 0.1192f * ag + 0.9505f * ab;
-		float bX = 0.4124f * br + 0.3576f * bg + 0.1805f * bb;
-		float bY = 0.2126f * br + 0.7152f * bg + 0.0722f * bb;
-		float bZ = 0.0193f * br + 0.1192f * bg + 0.9505f * bb;
-		// convert to CIE Lab
-		float Xn = 0.3127f;
-		float Yn = 0.3290f;
-		float Zn = 0.3583f;
-		float aL = 116 * cbrtf(aY / Yn) - 16;
-		float aA = 500 * (cbrtf(aX / Xn) - cbrtf(aY / Yn));
-		float aB = 200 * (cbrtf(aY / Yn) - cbrtf(aZ / Zn));
-		float bL = 116 * cbrtf(bY / Yn) - 16;
-		float bA = 500 * (cbrtf(bX / Xn) - cbrtf(bY / Yn));
-		float bB = 200 * (cbrtf(bY / Yn) - cbrtf(bZ / Zn));
-		// euclidean distance, but moving weight away from A and B
-		return 1000 * ((aL - bL) * (aL - bL) + (aA - bA) * (aA - bA) + (aB - bB) * (aB - bB));
-	}
-
 	inline int color_dist_normalmap(const color_t &a, const color_t &b)
 	{
 		float ca[3], cb[3], n;
@@ -359,10 +328,6 @@ namespace
 	{
 		return comp * comp;
 	}
-	template<> inline int refine_component_encode<color_dist_lab_srgb>(int comp)
-	{
-		return comp * comp;
-	}
 
 	template<ColorDistFunc ColorDist> inline int refine_component_decode(int comp)
 	{
@@ -373,10 +338,6 @@ namespace
 		return sqrtf(comp) + 0.5f;
 	}
 	template<> inline int refine_component_decode<color_dist_srgb_mixed>(int comp)
-	{
-		return sqrtf(comp) + 0.5f;
-	}
-	template<> inline int refine_component_decode<color_dist_lab_srgb>(int comp)
 	{
 		return sqrtf(comp) + 0.5f;
 	}
@@ -978,9 +939,6 @@ s2tc_encode_block_func_t s2tc_encode_block_func(DxtMode dxt, ColorDistMode cd, i
 			break;
 		case SRGB_MIXED:
 			return s2tc_encode_block_func<color_dist_srgb_mixed>(dxt, nrandom, refine);
-			break;
-		case LAB:
-			return s2tc_encode_block_func<color_dist_lab_srgb>(dxt, nrandom, refine);
 			break;
 		case AVG:
 			return s2tc_encode_block_func<color_dist_avg>(dxt, nrandom, refine);
