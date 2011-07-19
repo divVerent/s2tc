@@ -202,6 +202,7 @@ if ! [ -f "ba_grass_cc.tga" ]; then
 	wget -O- http://sauerbraten.svn.sourceforge.net/viewvc/sauerbraten/packages/blindabuser/ba_grass_cc.jpg | convert JPG:- ba_grass_cc.tga
 fi
 
+export LD_LIBRARY_PATH="$PWD/lib"
 for i in ba_grass_cc dxtfail floor_tread01_norm fract001 base_concrete1a disabled lift02 sunset amelia noise noise_solid supernova; do
 	html_rowstart "$i"
 
