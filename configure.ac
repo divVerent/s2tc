@@ -21,6 +21,12 @@ AM_CONDITIONAL(ENABLE_RUNTIME_LINKING, [test x"$enable_runtime_linking" != xno])
 AM_CONDITIONAL(ENABLE_TOOLS, [test x"$enable_tools" != xno])
 AM_CONDITIONAL(ENABLE_LIB, [test x"$enable_lib" != xno])
 
+AC_CHECK_HEADERS([GL/gl.h], , [AC_MSG_ERROR([OpenGL includes not found)])
+
+AS_IF([test x"$enable_runtime_linking" = xno], ,
+	[AS_IF([text x"$enable_dlopen" != xno], ,
+		[AC_MSG_ERROR([dynamic linking not possible, try --disable-runtime-linking])])])
+
 AC_CONFIG_FILES([Makefile txc_dxtn.pc])
 
 AC_OUTPUT
