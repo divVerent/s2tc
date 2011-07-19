@@ -8,7 +8,7 @@ t()
 	echo -n "$*"
 
 	good=false
-	eval `use_external=false sh test.sh --disable-shared --enable-static "$@"`
+	eval `use_external=false sh test.sh --disable-shared --enable-static --disable-runtime-linking "$@"`
 	if $good; then
 		for c in $columns; do
 			eval "v=\$$c"
