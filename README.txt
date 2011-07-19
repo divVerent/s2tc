@@ -42,8 +42,6 @@ The environment variable `S2TC_REFINE_COLORS` can be set to the following values
 
 *   `NEVER`: never run color refinement
 *   `ALWAYS`: unconditionally perform color refinement
-*   `CHECK`: perform color refinement, evaluate its output and discard it if it
-    didn't improve quality
 *   `LOOP`: perform color refinement, evaluate its output and discard it if it
     didn't improve quality, re-evaluate the pixel color values, and repeat
     until no improvement could be made

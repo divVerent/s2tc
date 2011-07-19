@@ -657,7 +657,7 @@ namespace
 					if(na1)
 						ca[1] = (2 * sa1 + na1) / (2 * na1);
 				}
-				if(refine == REFINE_CHECK || refine == REFINE_LOOP)
+				if(refine == REFINE_LOOP)
 				{
 					c[2] = c[0];
 					c[3] = c[1];
@@ -675,7 +675,7 @@ namespace
 					c[1].b = refine_component_decode<ColorDist>((2 * sc1b + nc1) / (2 * nc1));
 				}
 
-				if(refine == REFINE_CHECK || refine == REFINE_LOOP)
+				if(refine == REFINE_LOOP)
 				{
 					int score_01 = 0;
 					int score_23 = 0;
@@ -694,36 +694,18 @@ namespace
 									continue;
 							}
 							int bitindex = pindex * 2;
-							if(refine == REFINE_CHECK)
+							if(testbit(&out[(dxt == DXT1 ? 4 : 12)], bitindex))
 							{
-								if(testbit(&out[(dxt == DXT1 ? 4 : 12)], bitindex))
-								{
-									// we picked an 1
-									score_01 += ColorDist(c[1], c[4]);
-									score_23 += ColorDist(c[3], c[4]);
-								}
-								else
-								{
-									// we picked a 0
-									score_01 += ColorDist(c[0], c[4]);
-									score_23 += ColorDist(c[2], c[4]);
-								}
+								// we picked an 1
+								score_23 += ColorDist(c[3], c[4]);
 							}
-							else if(refine == REFINE_LOOP)
+							else
 							{
-								if(testbit(&out[(dxt == DXT1 ? 4 : 12)], bitindex))
-								{
-									// we picked an 1
-									score_23 += ColorDist(c[3], c[4]);
-								}
-								else
-								{
-									// we picked a 0
-									score_23 += ColorDist(c[2], c[4]);
-								}
-								// we WILL run another loop iteration, if score_01 wins
-								score_01 += min(ColorDist(c[0], c[4]), ColorDist(c[1], c[4]));
+								// we picked a 0
+								score_23 += ColorDist(c[2], c[4]);
 							}
+							// we WILL run another loop iteration, if score_01 wins
+							score_01 += min(ColorDist(c[0], c[4]), ColorDist(c[1], c[4]));
 						}
 
 					if(score_23 <= score_01)
@@ -732,7 +714,7 @@ namespace
 						c[0] = c[2];
 						c[1] = c[3];
 					}
-					else if(refine == REFINE_LOOP)
+					else
 						refined = true;
 
 					// alpha refinement is always good and doesn't
@@ -811,20 +793,6 @@ namespace
 		}
 	}
 
-	// these color dist functions do not need the refinement check, as they always improve the situation
-	template<ColorDistFunc ColorDist> struct need_refine_check
-	{
-		static const bool value = true;
-	};
-	template<> struct need_refine_check<color_dist_avg>
-	{
-		static const bool value = false;
-	};
-	template<> struct need_refine_check<color_dist_wavg>
-	{
-		static const bool value = false;
-	};
-
 	// compile time dispatch magic
 	template<DxtMode dxt, ColorDistFunc ColorDist, CompressionMode mode>
 	inline s2tc_encode_block_func_t s2tc_encode_block_func(RefinementMode refine)
@@ -835,9 +803,6 @@ namespace
 				return s2tc_encode_block<dxt, ColorDist, mode, REFINE_NEVER>;
 			case REFINE_LOOP:
 				return s2tc_encode_block<dxt, ColorDist, mode, REFINE_LOOP>;
-			case REFINE_CHECK:
-				if(need_refine_check<ColorDist>::value)
-					return s2tc_encode_block<dxt, ColorDist, mode, REFINE_CHECK>;
 			default:
 			case REFINE_ALWAYS:
 				return s2tc_encode_block<dxt, ColorDist, mode, REFINE_ALWAYS>;
@@ -849,7 +814,7 @@ namespace
 	{
 		static const bool value = true;
 	};
-	template<> struct need_refine_check<color_dist_normalmap>
+	template<> struct supports_fast<color_dist_normalmap>
 	{
 		static const bool value = false;
 	};
@@ -1135,7 +1100,7 @@ namespace
 	}
 
 	template<int srccomps, int alphabits>
-	void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h, DitherMode dither)
+	inline void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h, DitherMode dither)
 	{
 		switch(dither)
 		{
@@ -1153,7 +1118,7 @@ namespace
 	}
 
 	template<int srccomps>
-	void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h, int alphabits, DitherMode dither)
+	inline void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h, int alphabits, DitherMode dither)
 	{
 		switch(alphabits)
 		{

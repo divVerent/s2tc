@@ -206,8 +206,6 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 				refine = REFINE_NEVER;
 			else if(!strcasecmp(v, "ALWAYS"))
 				refine = REFINE_ALWAYS;
-			else if(!strcasecmp(v, "CHECK"))
-				refine = REFINE_CHECK;
 			else if(!strcasecmp(v, "LOOP"))
 				refine = REFINE_LOOP;
 			else

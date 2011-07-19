@@ -47,7 +47,6 @@ enum RefinementMode
 {
 	REFINE_NEVER,
 	REFINE_ALWAYS,
-	REFINE_CHECK,
 	REFINE_LOOP
 };
 
