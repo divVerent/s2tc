@@ -45,7 +45,7 @@ void fetch_2d_texel_rgb_dxt1(GLint srcRowStride, const GLubyte *pixdata,
 	{
 		case 0:                        break;
 		case 1:  c = c1;               break;
-		case 3:  if(c1 > c) { c = 0;   break; }
+		case 3:  if(c1 >= c) { c = 0;  break; }
 		default: if((i^j) & 1) c = c1; break;
 	}
 	t[0] = ((c >> 11) & 0x1F); t[0] = (t[0] << 3) | (t[0] >> 2);
@@ -67,7 +67,7 @@ void fetch_2d_texel_rgba_dxt1(GLint srcRowStride, const GLubyte *pixdata,
 	{
 		case 0:                        t[3] = 255; break;
 		case 1:  c = c1;               t[3] = 255; break;
-		case 3:  if(c1 > c) { c = 0;   t[3] =   0; break; }
+		case 3:  if(c1 >= c) { c = 0;  t[3] =   0; break; }
 		default: if((i^j) & 1) c = c1; t[3] = 255; break;
 	}
 	t[0] = ((c >> 11) & 0x1F); t[0] = (t[0] << 3) | (t[0] >> 2);
@@ -130,11 +130,11 @@ void fetch_2d_texel_rgba_dxt5(GLint srcRowStride, const GLubyte *pixdata,
 		ab |= 4;
 	switch(ab)
 	{
-		case 0:                        break;
-		case 1:  a = a1;               break;
-		case 6:  a = 0;                break;
-		case 7:  a = 255;              break;
-		default: if((i^j) & 1) a = a1; break;
+		case 0:                         break;
+		case 1:  a = a1;                break;
+		case 6:  if(a1 >= a) { a = 0;   break; }
+		case 7:  if(a1 >= a) { a = 255; break; }
+		default: if((i^j) & 1) a = a1;  break;
 	}
 	t[3] = a;
 }
