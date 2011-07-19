@@ -35,7 +35,7 @@ enum DitherMode
 	DITHER_FLOYDSTEINBERG
 };
 
-void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h, int srccomps, bool bgr, int alphabits, DitherMode dither);
+void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h, int srccomps, int alphabits, DitherMode dither);
 
 enum DxtMode
 {

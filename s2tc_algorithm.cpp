@@ -980,7 +980,7 @@ namespace
 		return ret;
 	}
 
-	template<int srccomps, bool bgr, int alphabits, DitherMode dither>
+	template<int srccomps, int alphabits, DitherMode dither>
 	inline void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h)
 	{
 		int x, y;
@@ -988,26 +988,13 @@ namespace
 		{
 			case DITHER_NONE:
 				{
-					if(bgr)
-					{
-						for(y = 0; y < h; ++y)
-							for(x = 0; x < w; ++x)
-							{
-								out[(x + y * w) * 4 + 2] = rgba[(x + y * w) * srccomps + 2] >> 3;
-								out[(x + y * w) * 4 + 1] = rgba[(x + y * w) * srccomps + 1] >> 2;
-								out[(x + y * w) * 4 + 0] = rgba[(x + y * w) * srccomps + 0] >> 3;
-							}
-					}
-					else
-					{
-						for(y = 0; y < h; ++y)
-							for(x = 0; x < w; ++x)
-							{
-								out[(x + y * w) * 4 + 2] = rgba[(x + y * w) * srccomps + 0] >> 3;
-								out[(x + y * w) * 4 + 1] = rgba[(x + y * w) * srccomps + 1] >> 2;
-								out[(x + y * w) * 4 + 0] = rgba[(x + y * w) * srccomps + 2] >> 3;
-							}
-					}
+					for(y = 0; y < h; ++y)
+						for(x = 0; x < w; ++x)
+						{
+							out[(x + y * w) * 4 + 2] = rgba[(x + y * w) * srccomps + 0] >> 3;
+							out[(x + y * w) * 4 + 1] = rgba[(x + y * w) * srccomps + 1] >> 2;
+							out[(x + y * w) * 4 + 0] = rgba[(x + y * w) * srccomps + 2] >> 3;
+						}
 					if(srccomps == 4)
 					{
 						if(alphabits == 1)
@@ -1045,26 +1032,13 @@ namespace
 					int diffuse_g = 0;
 					int diffuse_b = 0;
 					int diffuse_a = 0;
-					if(bgr)
-					{
-						for(y = 0; y < h; ++y)
-							for(x = 0; x < w; ++x)
-							{
-								out[(x + y * w) * 4 + 2] = diffuse(&diffuse_r, rgba[(x + y * w) * srccomps + 2], 3);
-								out[(x + y * w) * 4 + 1] = diffuse(&diffuse_g, rgba[(x + y * w) * srccomps + 1], 2);
-								out[(x + y * w) * 4 + 0] = diffuse(&diffuse_b, rgba[(x + y * w) * srccomps + 0], 3);
-							}
-					}
-					else
-					{
-						for(y = 0; y < h; ++y)
-							for(x = 0; x < w; ++x)
-							{
-								out[(x + y * w) * 4 + 2] = diffuse(&diffuse_r, rgba[(x + y * w) * srccomps + 0], 3);
-								out[(x + y * w) * 4 + 1] = diffuse(&diffuse_g, rgba[(x + y * w) * srccomps + 1], 2);
-								out[(x + y * w) * 4 + 0] = diffuse(&diffuse_b, rgba[(x + y * w) * srccomps + 2], 3);
-							}
-					}
+					for(y = 0; y < h; ++y)
+						for(x = 0; x < w; ++x)
+						{
+							out[(x + y * w) * 4 + 2] = diffuse(&diffuse_r, rgba[(x + y * w) * srccomps + 0], 3);
+							out[(x + y * w) * 4 + 1] = diffuse(&diffuse_g, rgba[(x + y * w) * srccomps + 1], 2);
+							out[(x + y * w) * 4 + 0] = diffuse(&diffuse_b, rgba[(x + y * w) * srccomps + 2], 3);
+						}
 					if(srccomps == 4)
 					{
 						if(alphabits == 1)
@@ -1102,42 +1076,20 @@ namespace
 					memset(downrow, 0, sizeof(downrow));
 					int *thisrow_r, *thisrow_g, *thisrow_b, *thisrow_a;
 					int *downrow_r, *downrow_g, *downrow_b, *downrow_a;
-					if(bgr)
+					for(y = 0; y < h; ++y)
 					{
-						for(y = 0; y < h; ++y)
+						thisrow_r = downrow + ((y&1)?3:0) * pw;
+						downrow_r = downrow + ((y&1)?0:3) * pw;
+						memset(downrow_r, 0, sizeof(*downrow_r) * (3*pw));
+						thisrow_g = thisrow_r + pw;
+						thisrow_b = thisrow_g + pw;
+						downrow_g = downrow_r + pw;
+						downrow_b = downrow_g + pw;
+						for(x = 0; x < w; ++x)
 						{
-							thisrow_r = downrow + ((y&1)?3:0) * pw;
-							downrow_r = downrow + ((y&1)?0:3) * pw;
-							memset(downrow_r, 0, sizeof(*downrow_r) * (3*pw));
-							thisrow_g = thisrow_r + pw;
-							thisrow_b = thisrow_g + pw;
-							downrow_g = downrow_r + pw;
-							downrow_b = downrow_g + pw;
-							for(x = 0; x < w; ++x)
-							{
-								out[(x + y * w) * 4 + 2] = floyd(&thisrow_r[x], &downrow_r[x], rgba[(x + y * w) * srccomps + 2], 3);
-								out[(x + y * w) * 4 + 1] = floyd(&thisrow_g[x], &downrow_g[x], rgba[(x + y * w) * srccomps + 1], 2);
-								out[(x + y * w) * 4 + 0] = floyd(&thisrow_b[x], &downrow_b[x], rgba[(x + y * w) * srccomps + 0], 3);
-							}
-						}
-					}
-					else
-					{
-						for(y = 0; y < h; ++y)
-						{
-							thisrow_r = downrow + ((y&1)?3:0) * pw;
-							downrow_r = downrow + ((y&1)?0:3) * pw;
-							memset(downrow_r, 0, sizeof(*downrow_r) * (3*pw));
-							thisrow_g = thisrow_r + pw;
-							thisrow_b = thisrow_g + pw;
-							downrow_g = downrow_r + pw;
-							downrow_b = downrow_g + pw;
-							for(x = 0; x < w; ++x)
-							{
-								out[(x + y * w) * 4 + 2] = floyd(&thisrow_r[x], &downrow_r[x], rgba[(x + y * w) * srccomps + 0], 3);
-								out[(x + y * w) * 4 + 1] = floyd(&thisrow_g[x], &downrow_g[x], rgba[(x + y * w) * srccomps + 1], 2);
-								out[(x + y * w) * 4 + 0] = floyd(&thisrow_b[x], &downrow_b[x], rgba[(x + y * w) * srccomps + 2], 3);
-							}
+							out[(x + y * w) * 4 + 2] = floyd(&thisrow_r[x], &downrow_r[x], rgba[(x + y * w) * srccomps + 0], 3);
+							out[(x + y * w) * 4 + 1] = floyd(&thisrow_g[x], &downrow_g[x], rgba[(x + y * w) * srccomps + 1], 2);
+							out[(x + y * w) * 4 + 0] = floyd(&thisrow_b[x], &downrow_b[x], rgba[(x + y * w) * srccomps + 2], 3);
 						}
 					}
 					if(srccomps == 4)
@@ -1182,60 +1134,51 @@ namespace
 		}
 	}
 
-	template<int srccomps, bool bgr, int alphabits>
+	template<int srccomps, int alphabits>
 	void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h, DitherMode dither)
 	{
 		switch(dither)
 		{
 			case DITHER_NONE:
-				rgb565_image<srccomps, bgr, alphabits, DITHER_NONE>(out, rgba, w, h);
+				rgb565_image<srccomps, alphabits, DITHER_NONE>(out, rgba, w, h);
 				break;
 			default:
 			case DITHER_SIMPLE:
-				rgb565_image<srccomps, bgr, alphabits, DITHER_SIMPLE>(out, rgba, w, h);
+				rgb565_image<srccomps, alphabits, DITHER_SIMPLE>(out, rgba, w, h);
 				break;
 			case DITHER_FLOYDSTEINBERG:
-				rgb565_image<srccomps, bgr, alphabits, DITHER_FLOYDSTEINBERG>(out, rgba, w, h);
-				break;
-		}
-	}
-
-	template<int srccomps, bool bgr>
-	void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h, int alphabits, DitherMode dither)
-	{
-		switch(alphabits)
-		{
-			case 1:
-				rgb565_image<srccomps, bgr, 1>(out, rgba, w, h, dither);
-				break;
-			case 4:
-				rgb565_image<srccomps, bgr, 4>(out, rgba, w, h, dither);
-				break;
-			default:
-			case 8:
-				rgb565_image<srccomps, bgr, 8>(out, rgba, w, h, dither);
+				rgb565_image<srccomps, alphabits, DITHER_FLOYDSTEINBERG>(out, rgba, w, h);
 				break;
 		}
 	}
 
 	template<int srccomps>
-	void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h, bool bgr, int alphabits, DitherMode dither)
+	void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h, int alphabits, DitherMode dither)
 	{
-		if(bgr)
-			rgb565_image<srccomps, true>(out, rgba, w, h, alphabits, dither);
-		else
-			rgb565_image<srccomps, false>(out, rgba, w, h, alphabits, dither);
+		switch(alphabits)
+		{
+			case 1:
+				rgb565_image<srccomps, 1>(out, rgba, w, h, dither);
+				break;
+			case 4:
+				rgb565_image<srccomps, 4>(out, rgba, w, h, dither);
+				break;
+			default:
+			case 8:
+				rgb565_image<srccomps, 8>(out, rgba, w, h, dither);
+				break;
+		}
 	}
 };
 
-void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h, int srccomps, bool bgr, int alphabits, DitherMode dither)
+void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h, int srccomps, int alphabits, DitherMode dither)
 {
 	switch(srccomps)
 	{
 		case 3:
-			rgb565_image<3>(out, rgba, w, h, bgr, alphabits, dither);
+			rgb565_image<3>(out, rgba, w, h, alphabits, dither);
 		case 4:
 		default:
-			rgb565_image<4>(out, rgba, w, h, bgr, alphabits, dither);
+			rgb565_image<4>(out, rgba, w, h, alphabits, dither);
 	}
 }
