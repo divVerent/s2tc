@@ -30,10 +30,44 @@
 #include <algorithm>
 #include "s2tc_common.h"
 
+#ifdef ENABLE_RUNTIME_LINKING
+#include <dlfcn.h>
+#include <GL/gl.h>
+extern "C"
+{
+	typedef void (tx_compress_dxtn_t)(GLint srccomps, GLint width, GLint height,
+			      const GLubyte *srcPixData, GLenum destformat,
+			      GLubyte *dest, GLint dstRowStride);
+};
+tx_compress_dxtn_t *tx_compress_dxtn = NULL;
+inline bool load_libraries()
+{
+	void *l = dlopen("libtxc_dxtn.so", RTLD_NOW);
+	if(!l)
+	{
+		fprintf(stderr, "Cannot load library: %s\n", dlerror());
+		return false;
+	}
+	tx_compress_dxtn = (tx_compress_dxtn_t *) dlsym(l, "tx_compress_dxtn");
+	if(!tx_compress_dxtn)
+	{
+		fprintf(stderr, "The selected libtxc_dxtn.so does not contain all required symbols.");
+		dlclose(l);
+		return false;
+	}
+	return true;
+}
+#else
 extern "C"
 {
 #include "txc_dxtn.h"
 };
+inline bool load_libraries()
+{
+	return true;
+}
+#endif
+
 
 /* START stuff that originates from image.c in DarkPlaces */
 /*

@@ -13,6 +13,14 @@ fi
 
 AC_PROG_LIBTOOL
 
+AC_ARG_ENABLE(runtime-linking, AS_HELP_STRING([--disable-runtime-linking], [Do not load the library at runtime (faster startup, more dependencies)]), [enable_runtime_linking=$enableval], [enable_runtime_linking=yes])
+AC_ARG_ENABLE(tools, AS_HELP_STRING([--disable-tools], [Do not build the s2tc_compress and s2_decompress tools]), [enable_tools=$enableval], [enable_tools=yes])
+AC_ARG_ENABLE(lib, AS_HELP_STRING([--disable-lib], [Do not build the included libtxc_dxtn library for S2TC]), [enable_lib=$enableval], [enable_lib=yes])
+
+AM_CONDITIONAL(ENABLE_RUNTIME_LINKING, [test x"$enable_runtime_linking" != xno])
+AM_CONDITIONAL(ENABLE_TOOLS, [test x"$enable_tools" != xno])
+AM_CONDITIONAL(ENABLE_LIB, [test x"$enable_lib" != xno])
+
 AC_CONFIG_FILES([Makefile txc_dxtn.pc])
 
 AC_OUTPUT

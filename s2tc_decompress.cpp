@@ -27,10 +27,54 @@
 #include <string.h>
 #include <algorithm>
 
+#ifdef ENABLE_RUNTIME_LINKING
+#include <dlfcn.h>
+#include <GL/gl.h>
+extern "C"
+{
+	typedef void (fetch_2d_texel_rgb_dxt1_t)(GLint srcRowStride, const GLubyte *pixdata,
+			     GLint i, GLint j, GLvoid *texel);
+	typedef void (fetch_2d_texel_rgba_dxt1_t)(GLint srcRowStride, const GLubyte *pixdata,
+			     GLint i, GLint j, GLvoid *texel);
+	typedef void (fetch_2d_texel_rgba_dxt3_t)(GLint srcRowStride, const GLubyte *pixdata,
+			     GLint i, GLint j, GLvoid *texel);
+	typedef void (fetch_2d_texel_rgba_dxt5_t)(GLint srcRowStride, const GLubyte *pixdata,
+				     GLint i, GLint j, GLvoid *texel);
+};
+fetch_2d_texel_rgb_dxt1_t *fetch_2d_texel_rgb_dxt1 = NULL;
+fetch_2d_texel_rgba_dxt1_t *fetch_2d_texel_rgba_dxt1 = NULL;
+fetch_2d_texel_rgba_dxt3_t *fetch_2d_texel_rgba_dxt3 = NULL;
+fetch_2d_texel_rgba_dxt5_t *fetch_2d_texel_rgba_dxt5 = NULL;
+inline bool load_libraries()
+{
+	void *l = dlopen("libtxc_dxtn.so", RTLD_NOW);
+	if(!l)
+	{
+		fprintf(stderr, "Cannot load library: %s\n", dlerror());
+		return false;
+	}
+	fetch_2d_texel_rgb_dxt1 = (fetch_2d_texel_rgb_dxt1_t *) dlsym(l, "fetch_2d_texel_rgb_dxt1");
+	fetch_2d_texel_rgba_dxt1 = (fetch_2d_texel_rgba_dxt1_t *) dlsym(l, "fetch_2d_texel_rgba_dxt1");
+	fetch_2d_texel_rgba_dxt3 = (fetch_2d_texel_rgba_dxt3_t *) dlsym(l, "fetch_2d_texel_rgba_dxt3");
+	fetch_2d_texel_rgba_dxt5 = (fetch_2d_texel_rgba_dxt5_t *) dlsym(l, "fetch_2d_texel_rgba_dxt5");
+	if(!fetch_2d_texel_rgb_dxt1 || !fetch_2d_texel_rgba_dxt1 || !fetch_2d_texel_rgba_dxt3 || !fetch_2d_texel_rgba_dxt5)
+	{
+		fprintf(stderr, "The selected libtxc_dxtn.so does not contain all required symbols.");
+		dlclose(l);
+		return false;
+	}
+	return true;
+}
+#else
 extern "C"
 {
 #include "txc_dxtn.h"
 };
+inline bool load_libraries()
+{
+	return true;
+}
+#endif
 
 uint32_t LittleLong(uint32_t w)
 {
@@ -56,6 +100,9 @@ int main()
 	int fourcc = LittleLong(h[21]);
 	void (*fetch)(GLint srcRowStride, const GLubyte *pixdata, GLint i, GLint j, GLvoid *texel) = NULL;
 	int blocksize;
+
+	if(!load_libraries())
+		return 1;
 
 	switch(fourcc)
 	{
