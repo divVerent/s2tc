@@ -1,6 +1,6 @@
 #!/bin/sh
 
-columns="rand32_sRGB_mixed_l rand32_wavg_l rand32_avg_l norand_wavg_a faster_wavg_a faster_wavg_l"
+columns="rand32_sRGB_mixed_l faster_wavg_a faster_wavg_l"
 
 t()
 {

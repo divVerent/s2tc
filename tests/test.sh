@@ -65,7 +65,7 @@ EOF
 
 	col=1
 
-	coltitle "4bpp"
+	coltitle "sixteen"
 	if $use_compressonator; then
 		coltitle "compressonator"
 	fi
