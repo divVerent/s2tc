@@ -342,16 +342,6 @@ namespace
 		return sqrtf(comp) + 0.5f;
 	}
 
-	// these color dist functions ignore color values at alpha 0
-	template<ColorDistFunc ColorDist> struct alpha_0_is_unimportant
-	{
-		static bool const value = true;
-	};
-	template<> struct alpha_0_is_unimportant<color_dist_normalmap>
-	{
-		static bool const value = false;
-	};
-
 	template<DxtMode dxt, ColorDistFunc ColorDist, CompressionMode mode, RefinementMode refine>
 	inline void s2tc_encode_block(unsigned char *out, const unsigned char *rgba, int iw, int w, int h, int nrandom)
 	{
@@ -426,9 +416,6 @@ namespace
 				for(y = 0; y < h; ++y)
 				{
 					ca[n]  = rgba[(x + y * iw) * 4 + 3];
-					if(alpha_0_is_unimportant<ColorDist>::value)
-						if(!ca[n])
-							continue;
 					c[n].r = rgba[(x + y * iw) * 4 + 2];
 					c[n].g = rgba[(x + y * iw) * 4 + 1];
 					c[n].b = rgba[(x + y * iw) * 4 + 0];
@@ -534,7 +521,6 @@ namespace
 					{
 						case DXT5:
 							{
-								bool visible = true;
 								int da[4];
 								int bitindex = pindex * 3;
 								da[0] = alpha_dist(ca[0], ca[2]);
@@ -548,8 +534,6 @@ namespace
 									setbit(&out[2], bitindex);
 									++bitindex;
 									setbit(&out[2], bitindex);
-									if(alpha_0_is_unimportant<ColorDist>::value)
-										visible = false;
 								}
 								else if(da[3] <= da[0] && da[3] <= da[1])
 								{
@@ -585,26 +569,20 @@ namespace
 									setbit(&out[12], bitindex);
 									if(refine != REFINE_NEVER)
 									{
-										if(!alpha_0_is_unimportant<ColorDist>::value || visible)
-										{
-											++nc1;
-											sc1r += refine_component_encode<ColorDist>(c[2].r);
-											sc1g += refine_component_encode<ColorDist>(c[2].g);
-											sc1b += refine_component_encode<ColorDist>(c[2].b);
-										}
+										++nc1;
+										sc1r += refine_component_encode<ColorDist>(c[2].r);
+										sc1g += refine_component_encode<ColorDist>(c[2].g);
+										sc1b += refine_component_encode<ColorDist>(c[2].b);
 									}
 								}
 								else
 								{
 									if(refine != REFINE_NEVER)
 									{
-										if(!alpha_0_is_unimportant<ColorDist>::value || visible)
-										{
-											++nc0;
-											sc0r += refine_component_encode<ColorDist>(c[2].r);
-											sc0g += refine_component_encode<ColorDist>(c[2].g);
-											sc0b += refine_component_encode<ColorDist>(c[2].b);
-										}
+										++nc0;
+										sc0r += refine_component_encode<ColorDist>(c[2].r);
+										sc0g += refine_component_encode<ColorDist>(c[2].g);
+										sc0b += refine_component_encode<ColorDist>(c[2].b);
 									}
 								}
 							}
@@ -620,26 +598,20 @@ namespace
 								setbit(&out[12], bitindex);
 								if(refine != REFINE_NEVER)
 								{
-									if(!alpha_0_is_unimportant<ColorDist>::value || ca[2])
-									{
-										++nc1;
-										sc1r += refine_component_encode<ColorDist>(c[2].r);
-										sc1g += refine_component_encode<ColorDist>(c[2].g);
-										sc1b += refine_component_encode<ColorDist>(c[2].b);
-									}
+									++nc1;
+									sc1r += refine_component_encode<ColorDist>(c[2].r);
+									sc1g += refine_component_encode<ColorDist>(c[2].g);
+									sc1b += refine_component_encode<ColorDist>(c[2].b);
 								}
 							}
 							else
 							{
 								if(refine != REFINE_NEVER)
 								{
-									if(!alpha_0_is_unimportant<ColorDist>::value || ca[2])
-									{
-										++nc0;
-										sc0r += refine_component_encode<ColorDist>(c[2].r);
-										sc0g += refine_component_encode<ColorDist>(c[2].g);
-										sc0b += refine_component_encode<ColorDist>(c[2].b);
-									}
+									++nc0;
+									sc0r += refine_component_encode<ColorDist>(c[2].r);
+									sc0g += refine_component_encode<ColorDist>(c[2].g);
+									sc0b += refine_component_encode<ColorDist>(c[2].b);
 								}
 							}
 							break;
@@ -714,24 +686,12 @@ namespace
 							c[4].r = rgba[(x + y * iw) * 4 + 2];
 							c[4].g = rgba[(x + y * iw) * 4 + 1];
 							c[4].b = rgba[(x + y * iw) * 4 + 0];
-							if(alpha_0_is_unimportant<ColorDist>::value || dxt == DXT1) // in DXT1, alpha 0 pixels are always skipped!
+							if(dxt == DXT1) // in DXT1, alpha 0 pixels are always skipped!
 							{
-								if(dxt == DXT5)
-								{
-									// check ENCODED alpha
-									int bitindex_0 = pindex * 3;
-									int bitindex_1 = bitindex_0 + 2;
-									if(!testbit(&out[2], bitindex_0))
-										if(testbit(&out[2], bitindex_1))
-											continue;
-								}
-								else
-								{
-									// check ORIGINAL alpha (DXT1 and DXT3 preserve it)
-									ca[4] = rgba[(x + y * iw) * 4 + 3];
-									if(!ca[4])
-										continue;
-								}
+								// check ORIGINAL alpha (DXT1 and DXT3 preserve it)
+								ca[4] = rgba[(x + y * iw) * 4 + 3];
+								if(!rgba[(x + y * iw) * 4 + 3])
+									continue;
 							}
 							int bitindex = pindex * 2;
 							if(refine == REFINE_CHECK)
