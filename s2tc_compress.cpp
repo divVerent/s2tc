@@ -21,7 +21,6 @@
 #define S2TC_LICENSE_IDENTIFIER s2tc_compress_license
 #include "s2tc_license.h"
 
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -569,13 +568,9 @@ int usage(const char *me)
 
 int main(int argc, char **argv)
 {
-	unsigned char *pic, *picdata;
-	int piclen;
-	const char *fourcc;
-	int blocksize;
 	GLenum dxt = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
 	const char *infile = NULL, *outfile = NULL;
-	FILE *outfh;
+
 #ifdef ENABLE_RUNTIME_LINKING
 	const char *library = "libtxc_dxtn.so";
 #endif
@@ -620,29 +615,31 @@ int main(int argc, char **argv)
 		return 1;
 #endif
 
-	outfh = outfile ? fopen(outfile, "wb") : stdout;
+	FILE *outfh = outfile ? fopen(outfile, "wb") : stdout;
 	if(!outfh)
 	{
 		printf("opening output failed\n");
 		return 2;
 	}
 
-	picdata = FS_LoadFile(infile, &piclen);
+	int piclen;
+	unsigned char *picdata = FS_LoadFile(infile, &piclen);
 	if(!picdata)
 	{
 		printf("FS_LoadFile failed\n");
 		return 2;
 	}
-	pic = LoadTGA_BGRA(picdata, piclen);
 
+	unsigned char *pic = LoadTGA_BGRA(picdata, piclen);
 	for(int x = 0; x < image_width*image_height; ++x)
 		std::swap(pic[4*x], pic[4*x+2]);
-
 	int mipcount = 0;
 	while(image_width >= (1 << mipcount) || image_height >= (1 << mipcount))
 		++mipcount;
 	// now, (1 << mipcount) >= width, height
 
+	const char *fourcc;
+	int blocksize;
 	switch(dxt)
 	{
 		case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:

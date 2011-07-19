@@ -22,10 +22,12 @@
 #include "s2tc_license.h"
 
 #include <stdio.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
+#include <getopt.h>
 #include <algorithm>
+#include "s2tc_common.h"
 
 #ifdef ENABLE_RUNTIME_LINKING
 #include <dlfcn.h>
@@ -45,9 +47,9 @@ fetch_2d_texel_rgb_dxt1_t *fetch_2d_texel_rgb_dxt1 = NULL;
 fetch_2d_texel_rgba_dxt1_t *fetch_2d_texel_rgba_dxt1 = NULL;
 fetch_2d_texel_rgba_dxt3_t *fetch_2d_texel_rgba_dxt3 = NULL;
 fetch_2d_texel_rgba_dxt5_t *fetch_2d_texel_rgba_dxt5 = NULL;
-inline bool load_libraries()
+inline bool load_libraries(const char *n)
 {
-	void *l = dlopen("libtxc_dxtn.so", RTLD_NOW);
+	void *l = dlopen(n, RTLD_NOW);
 	if(!l)
 	{
 		fprintf(stderr, "Cannot load library: %s\n", dlerror());
@@ -70,10 +72,6 @@ extern "C"
 {
 #include "txc_dxtn.h"
 };
-inline bool load_libraries()
-{
-	return true;
-}
 #endif
 
 uint32_t LittleLong(uint32_t w)
@@ -91,19 +89,80 @@ uint32_t LittleLong(uint32_t w)
 	return un.u;
 }
 
-int main()
+int usage(const char *me)
 {
+	fprintf(stderr, "usage:\n"
+			"%s \n"
+			"    [-i infile.tga]\n"
+			"    [-o outfile.dds]\n"
+#ifdef ENABLE_RUNTIME_LINKING
+			"    [-l path_to_libtxc_dxtn.so]\n"
+#endif
+			,
+			me);
+	return 1;
+}
+
+int main(int argc, char **argv)
+{
+	const char *infile = NULL, *outfile = NULL;
+
+#ifdef ENABLE_RUNTIME_LINKING
+	const char *library = "libtxc_dxtn.so";
+#endif
+
+	int opt;
+	while((opt = getopt(argc, argv, "i:o:"
+#ifdef ENABLE_RUNTIME_LINKING
+					"l:"
+#endif
+					)) != -1)
+	{
+		switch(opt)
+		{
+			case 'i':
+				infile = optarg;
+				break;
+			case 'o':
+				outfile = optarg;
+				break;
+#ifdef ENABLE_RUNTIME_LINKING
+			case 'l':
+				library = optarg;
+				break;
+#endif
+			default:
+				return usage(argv[0]);
+				break;
+		}
+	}
+#ifdef ENABLE_RUNTIME_LINKING
+	if(!load_libraries(library))
+		return 1;
+#endif
+
+	FILE *infh = outfile ? fopen(outfile, "rb") : stdin;
+	if(!infh)
+	{
+		printf("opening input failed\n");
+		return 2;
+	}
+
+	FILE *outfh = outfile ? fopen(outfile, "wb") : stdout;
+	if(!outfh)
+	{
+		printf("opening output failed\n");
+		return 2;
+	}
+
 	uint32_t h[32];
-	fread(h, sizeof(h), 1, stdin);
+	fread(h, sizeof(h), 1, infh);
 	int height = LittleLong(h[3]);
 	int width = LittleLong(h[4]);
-	int fourcc = LittleLong(h[21]);
+
 	void (*fetch)(GLint srcRowStride, const GLubyte *pixdata, GLint i, GLint j, GLvoid *texel) = NULL;
+	int fourcc = LittleLong(h[21]);
 	int blocksize;
-
-	if(!load_libraries())
-		return 1;
-
 	switch(fourcc)
 	{
 		case 0x31545844:
@@ -132,11 +191,11 @@ int main()
 	t[15] = height / 256;
 	t[16] = 32;
 	t[17] = 0x28;
-	fwrite(t, 18, 1, stdout);
+	fwrite(t, 18, 1, outfh);
 
 	int n = ((width + 3) / 4) * ((height + 3) / 4);
 	unsigned char *buf = (unsigned char *) malloc(n * blocksize);
-	fread(buf, blocksize, n, stdin);
+	fread(buf, blocksize, n, infh);
 
 	int x, y;
 	for(y = 0; y < height; ++y)
@@ -145,7 +204,13 @@ int main()
 			char data[4];
 			fetch(width, buf, x, y, &data);
 			std::swap(data[0], data[2]);
-			fwrite(data, 4, 1, stdout);
+			fwrite(data, 4, 1, outfh);
 		}
+
+	if(infile)
+		fclose(infh);
+	if(outfile)
+		fclose(outfh);
+
 	return 0;
 }
