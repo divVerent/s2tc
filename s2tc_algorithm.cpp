@@ -374,9 +374,9 @@ namespace
 			for(x = 0; x < w; ++x)
 				for(y = 0; y < h; ++y)
 				{
-					c[2].r = rgba[(x + y * iw) * 4 + 2];
+					c[2].r = rgba[(x + y * iw) * 4 + 0];
 					c[2].g = rgba[(x + y * iw) * 4 + 1];
-					c[2].b = rgba[(x + y * iw) * 4 + 0];
+					c[2].b = rgba[(x + y * iw) * 4 + 2];
 					ca[2]  = rgba[(x + y * iw) * 4 + 3];
 					// MODE_FAST doesn't work for normalmaps, so this works
 					if(!ca[2])
@@ -415,10 +415,10 @@ namespace
 			for(x = 0; x < w; ++x)
 				for(y = 0; y < h; ++y)
 				{
-					ca[n]  = rgba[(x + y * iw) * 4 + 3];
-					c[n].r = rgba[(x + y * iw) * 4 + 2];
+					c[n].r = rgba[(x + y * iw) * 4 + 0];
 					c[n].g = rgba[(x + y * iw) * 4 + 1];
-					c[n].b = rgba[(x + y * iw) * 4 + 0];
+					c[n].b = rgba[(x + y * iw) * 4 + 2];
+					ca[n]  = rgba[(x + y * iw) * 4 + 3];
 					++n;
 				}
 			if(n == 0)
@@ -513,9 +513,9 @@ namespace
 				for(y = 0; y < h; ++y)
 				{
 					int pindex = (x+y*4);
-					c[2].r = rgba[(x + y * iw) * 4 + 2];
+					c[2].r = rgba[(x + y * iw) * 4 + 0];
 					c[2].g = rgba[(x + y * iw) * 4 + 1];
-					c[2].b = rgba[(x + y * iw) * 4 + 0];
+					c[2].b = rgba[(x + y * iw) * 4 + 2];
 					ca[2]  = rgba[(x + y * iw) * 4 + 3];
 					switch(dxt)
 					{
@@ -683,9 +683,9 @@ namespace
 						for(y = 0; y < h; ++y)
 						{
 							int pindex = (x+y*4);
-							c[4].r = rgba[(x + y * iw) * 4 + 2];
+							c[4].r = rgba[(x + y * iw) * 4 + 0];
 							c[4].g = rgba[(x + y * iw) * 4 + 1];
-							c[4].b = rgba[(x + y * iw) * 4 + 0];
+							c[4].b = rgba[(x + y * iw) * 4 + 2];
 							if(dxt == DXT1) // in DXT1, alpha 0 pixels are always skipped!
 							{
 								// check ORIGINAL alpha (DXT1 and DXT3 preserve it)
@@ -991,9 +991,9 @@ namespace
 					for(y = 0; y < h; ++y)
 						for(x = 0; x < w; ++x)
 						{
-							out[(x + y * w) * 4 + 2] = rgba[(x + y * w) * srccomps + 0] >> 3;
+							out[(x + y * w) * 4 + 0] = rgba[(x + y * w) * srccomps + 0] >> 3;
 							out[(x + y * w) * 4 + 1] = rgba[(x + y * w) * srccomps + 1] >> 2;
-							out[(x + y * w) * 4 + 0] = rgba[(x + y * w) * srccomps + 2] >> 3;
+							out[(x + y * w) * 4 + 2] = rgba[(x + y * w) * srccomps + 2] >> 3;
 						}
 					if(srccomps == 4)
 					{
@@ -1035,9 +1035,9 @@ namespace
 					for(y = 0; y < h; ++y)
 						for(x = 0; x < w; ++x)
 						{
-							out[(x + y * w) * 4 + 2] = diffuse(&diffuse_r, rgba[(x + y * w) * srccomps + 0], 3);
+							out[(x + y * w) * 4 + 0] = diffuse(&diffuse_r, rgba[(x + y * w) * srccomps + 0], 3);
 							out[(x + y * w) * 4 + 1] = diffuse(&diffuse_g, rgba[(x + y * w) * srccomps + 1], 2);
-							out[(x + y * w) * 4 + 0] = diffuse(&diffuse_b, rgba[(x + y * w) * srccomps + 2], 3);
+							out[(x + y * w) * 4 + 2] = diffuse(&diffuse_b, rgba[(x + y * w) * srccomps + 2], 3);
 						}
 					if(srccomps == 4)
 					{
@@ -1087,9 +1087,9 @@ namespace
 						downrow_b = downrow_g + pw;
 						for(x = 0; x < w; ++x)
 						{
-							out[(x + y * w) * 4 + 2] = floyd(&thisrow_r[x], &downrow_r[x], rgba[(x + y * w) * srccomps + 0], 3);
+							out[(x + y * w) * 4 + 0] = floyd(&thisrow_r[x], &downrow_r[x], rgba[(x + y * w) * srccomps + 0], 3);
 							out[(x + y * w) * 4 + 1] = floyd(&thisrow_g[x], &downrow_g[x], rgba[(x + y * w) * srccomps + 1], 2);
-							out[(x + y * w) * 4 + 0] = floyd(&thisrow_b[x], &downrow_b[x], rgba[(x + y * w) * srccomps + 2], 3);
+							out[(x + y * w) * 4 + 2] = floyd(&thisrow_b[x], &downrow_b[x], rgba[(x + y * w) * srccomps + 2], 3);
 						}
 					}
 					if(srccomps == 4)
