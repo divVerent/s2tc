@@ -40,9 +40,9 @@ extern "C"
 			      GLubyte *dest, GLint dstRowStride);
 };
 tx_compress_dxtn_t *tx_compress_dxtn = NULL;
-inline bool load_libraries()
+inline bool load_libraries(const char *n)
 {
-	void *l = dlopen("libtxc_dxtn.so", RTLD_NOW);
+	void *l = dlopen(n, RTLD_NOW);
 	if(!l)
 	{
 		fprintf(stderr, "Cannot load library: %s\n", dlerror());
@@ -62,12 +62,7 @@ extern "C"
 {
 #include "txc_dxtn.h"
 };
-inline bool load_libraries()
-{
-	return true;
-}
 #endif
-
 
 /* START stuff that originates from image.c in DarkPlaces */
 /*
@@ -563,7 +558,11 @@ int usage(const char *me)
 			"%s \n"
 			"    [-i infile.tga]\n"
 			"    [-o outfile.dds]\n"
-			"    [-t {DXT1|DXT3|DXT5}]\n",
+			"    [-t {DXT1|DXT3|DXT5}]\n"
+#ifdef ENABLE_RUNTIME_LINKING
+			"    [-l path_to_libtxc_dxtn.so]\n"
+#endif
+			,
 			me);
 	return 1;
 }
@@ -577,9 +576,16 @@ int main(int argc, char **argv)
 	GLenum dxt = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
 	const char *infile = NULL, *outfile = NULL;
 	FILE *outfh;
+#ifdef ENABLE_RUNTIME_LINKING
+	const char *library = "libtxc_dxtn.so";
+#endif
 
 	int opt;
-	while((opt = getopt(argc, argv, "i:o:t:r:c:")) != -1)
+	while((opt = getopt(argc, argv, "i:o:t:"
+#ifdef ENABLE_RUNTIME_LINKING
+					"l:"
+#endif
+					)) != -1)
 	{
 		switch(opt)
 		{
@@ -599,11 +605,20 @@ int main(int argc, char **argv)
 				else
 					return usage(argv[0]);
 				break;
+#ifdef ENABLE_RUNTIME_LINKING
+			case 'l':
+				library = optarg;
+				break;
+#endif
 			default:
 				return usage(argv[0]);
 				break;
 		}
 	}
+#ifdef ENABLE_RUNTIME_LINKING
+	if(!load_libraries(library))
+		return 1;
+#endif
 
 	outfh = outfile ? fopen(outfile, "wb") : stdout;
 	if(!outfh)
