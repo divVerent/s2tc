@@ -183,8 +183,6 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 				cd = SRGB;
 			else if(!strcasecmp(v, "SRGB_MIXED"))
 				cd = SRGB_MIXED;
-			else if(!strcasecmp(v, "LAB"))
-				cd = LAB;
 			else if(!strcasecmp(v, "AVG"))
 				cd = AVG;
 			else if(!strcasecmp(v, "WAVG"))
