@@ -141,7 +141,7 @@ int main(int argc, char **argv)
 		return 1;
 #endif
 
-	FILE *infh = outfile ? fopen(outfile, "rb") : stdin;
+	FILE *infh = infile ? fopen(infile, "rb") : stdin;
 	if(!infh)
 	{
 		printf("opening input failed\n");
