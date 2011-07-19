@@ -312,7 +312,6 @@ namespace
 	enum CompressionMode
 	{
 		MODE_NORMAL,
-		MODE_RANDOM,
 		MODE_FAST
 	};
 
@@ -345,8 +344,8 @@ namespace
 	template<DxtMode dxt, ColorDistFunc ColorDist, CompressionMode mode, RefinementMode refine>
 	inline void s2tc_encode_block(unsigned char *out, const unsigned char *rgba, int iw, int w, int h, int nrandom)
 	{
-		color_t c[16 + (mode == MODE_RANDOM ? nrandom : 0)];
-		unsigned char ca[16 + (mode == MODE_RANDOM ? nrandom : 0)];
+		color_t c[16 + (nrandom >= 0 ? nrandom : 0)];
+		unsigned char ca[16 + (nrandom >= 0 ? nrandom : 0)];
 		int n = 0, m = 0;
 		int x, y;
 
@@ -431,7 +430,7 @@ namespace
 			}
 			m = n;
 
-			if(mode == MODE_RANDOM)
+			if(nrandom > 0)
 			{
 				color_t mins = c[0];
 				color_t maxs = c[0];
@@ -822,9 +821,7 @@ namespace
 	template<DxtMode dxt, ColorDistFunc ColorDist>
 	inline s2tc_encode_block_func_t s2tc_encode_block_func(int nrandom, RefinementMode refine)
 	{
-		if(nrandom > 0)
-			return s2tc_encode_block_func<dxt, ColorDist, MODE_RANDOM>(refine);
-		else if(!supports_fast<ColorDist>::value || nrandom == 0) // MODE_FAST not supported for normalmaps, sorry
+		if(!supports_fast<ColorDist>::value  || nrandom >= 0)
 			return s2tc_encode_block_func<dxt, ColorDist, MODE_NORMAL>(refine);
 		else
 			return s2tc_encode_block_func<dxt, ColorDist, MODE_FAST>(refine);
