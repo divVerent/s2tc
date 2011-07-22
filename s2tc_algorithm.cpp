@@ -128,9 +128,9 @@ namespace
 		inline operator color_t()
 		{
 			color_t out;
-			out.r = r & 31;
-			out.g = g & 63;
-			out.b = b & 31;
+			out.r = max(0, min(r, 31));
+			out.g = max(0, min(g, 63));
+			out.b = max(0, min(b, 31));
 			return out;
 		}
 	};
@@ -525,12 +525,28 @@ namespace
 				Big m = (((Sla * (scale_l * n) - Sa * Sl * scale_l) << 1) + den) / (den << 1); // actually scale_l * m
 				Big t = (((Sa * scale_l - m * Sl) << 1) + (scale_l * n)) / ((scale_l * n) << 1);
 				Big tm = t + m;
-				if(t != T(t))
-					return false;
-				if(tm != T(tm))
-					return false;
-				a = t;
-				b = tm;
+				T t_(t);
+				T tm_(tm);
+				if(t != t_ || tm != tm_)
+				{
+					// but evaluate them anyway
+					Big score_ab =
+						  Big(a) * (Sla - Sa * scale_l) * (2 * scale_l)
+						- Big(b) * (Sla * scale_l * 2)
+						+ Big(a) * Big(a) * (Sla * (scale_l * 2) + n * scale_l * scale_l + Sll)
+						+ Big(a) * Big(b) * (Sl * scale_l - Sll) * 2
+						+ Big(b) * Big(b) * (Sll);
+					Big score_tmt =
+						  Big(t_) * (Sla - Sa * scale_l) * (2 * scale_l)
+						- Big(tm_) * (Sla * scale_l * 2)
+						+ Big(t_) * Big(t_) * (Sla * (scale_l * 2) + n * scale_l * scale_l + Sll)
+						+ Big(t_) * Big(tm_) * (Sl * scale_l - Sll) * 2
+						+ Big(tm_) * Big(tm_) * (Sll);
+					if(!(score_ab > score_tmt))
+						return false;
+				}
+				a = t_;
+				b = tm_;
 				return true;
 			}
 			else if(n)
