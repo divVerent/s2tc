@@ -25,30 +25,126 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
+#include <algorithm>
+#include <iostream>
 
 #include "s2tc_algorithm.h"
 #include "s2tc_common.h"
 
 namespace
 {
-	typedef struct
+	struct color_t
 	{
 		signed char r, g, b;
-	}
-	color_t;
 
-	inline bool operator<(const color_t &a, const color_t &b)
+		inline color_t(): r(0), g(0), b(0)
+		{
+		}
+
+		inline color_t(signed char r_, signed char g_, signed char b_): r(r_), g(g_), b(b_)
+		{
+		}
+
+		inline color_t(int i): r(i >> 3), g(i >> 2), b(i >> 3)
+		{
+		}
+
+		inline bool operator<(const color_t &c)
+		{
+			signed char d;
+			d = r - c.r;
+			if(d)
+				return d < 0;
+			d = g - c.g;
+			if(d)
+				return d < 0;
+			d = b - c.b;
+			return d < 0;
+		}
+	};
+
+	struct bigcolor_t
 	{
-		signed char d;
-		d = a.r - b.r;
-		if(d)
-			return d < 0;
-		d = a.g - b.g;
-		if(d)
-			return d < 0;
-		d = a.b - b.b;
-		return d < 0;
+		int r, g, b;
+
+		inline bigcolor_t(): r(0), g(0), b(0)
+		{
+		}
+
+		inline bigcolor_t &operator+=(const color_t &c)
+		{
+			r += c.r;
+			g += c.g;
+			b += c.b;
+			return *this;
+		}
+
+		inline bigcolor_t &operator+=(int v)
+		{
+			r += v;
+			g += v;
+			b += v;
+			return *this;
+		}
+
+		inline bigcolor_t operator+(int v)
+		{
+			bigcolor_t out = *this;
+			out += v;
+			return out;
+		}
+
+		inline bigcolor_t &operator/=(int v)
+		{
+			r /= v;
+			g /= v;
+			b /= v;
+			return *this;
+		}
+
+		inline bigcolor_t operator/(int v)
+		{
+			bigcolor_t out = *this;
+			out /= v;
+			return out;
+		}
+
+		inline bigcolor_t &operator<<=(int v)
+		{
+			r <<= v;
+			g <<= v;
+			b <<= v;
+			return *this;
+		}
+
+		inline bigcolor_t operator<<(int v)
+		{
+			bigcolor_t out = *this;
+			out <<= v;
+			return out;
+		}
+
+		inline operator color_t()
+		{
+			color_t out;
+			out.r = r & 31;
+			out.g = g & 63;
+			out.b = b & 31;
+			return out;
+		}
+	};
+
+	std::ostream &operator<<(std::ostream &ost, const color_t &c)
+	{
+		return ost << "color_t(" << int(c.r) << ", " << int(c.g) << ", " << int(c.b) << ")";
 	}
+
+	std::ostream &operator<<(std::ostream &ost, const bigcolor_t &c)
+	{
+		return ost << "bigcolor_t(" << c.r << ", " << c.g << ", " << c.b << ")";
+	}
+
 	// 16 differences must fit in int
 	// i.e. a difference must be lower than 2^27
 
@@ -248,6 +344,7 @@ namespace
 	template <class T, class F>
 	inline void reduce_colors_inplace_2fixpoints(T *c, int n, int m, F dist, const T &fix0, const T &fix1)
 	{
+		// TODO fix this for ramp encoding!
 		int i, j, k;
 		int bestsum = -1;
 		int besti = 0;
@@ -341,6 +438,313 @@ namespace
 		return sqrtf(comp) + 0.5f;
 	}
 
+	template <class T, class Big, int scale_l>
+	struct s2tc_evaluate_colors_result_t;
+
+	template <class T, class Big>
+	struct s2tc_evaluate_colors_result_t<T, Big, 1>
+	{
+		// uses:
+		//   Big << int
+		//   Big / int
+		//   Big + int
+		//   Big += T
+		int n0, n1;
+		Big S0, S1;
+		inline s2tc_evaluate_colors_result_t():
+			n0(), n1(), S0(), S1()
+		{
+		}
+		inline void add(int l, T a)
+		{
+			if(l)
+			{
+				++n1;
+				S1 += a;
+			}
+			else
+			{
+				++n0;
+				S0 += a;
+			}
+		}
+		inline bool evaluate(T &a, T &b)
+		{
+			if(!n0 && !n1)
+				return false;
+			if(n0)
+				a = ((S0 << 1) + n0) / (n0 << 1);
+			if(n1)
+				b = ((S1 << 1) + n1) / (n1 << 1);
+			return true;
+		}
+	};
+
+	template <class T, class Big, int scale_l>
+	struct s2tc_evaluate_colors_result_t
+	{
+		// a possible implementation of inferred color/alpha values
+		// refining would go here
+	};
+
+	template <class T>
+	struct s2tc_evaluate_colors_result_null_t
+	{
+		inline void add(int l, T a)
+		{
+		}
+	};
+
+	template<class T> T get(const unsigned char *buf)
+	{
+		T c;
+		c.r = buf[0];
+		c.g = buf[1];
+		c.b = buf[2];
+		return c;
+	}
+	template<> unsigned char get<unsigned char>(const unsigned char *buf)
+	{
+		return buf[3]; // extract alpha
+	}
+
+	template<class T, class Big, int bpp, bool have_trans, bool have_0_255, int n_input, class Dist, class Eval, class Arr>
+	inline unsigned int s2tc_try_encode_block(
+			Arr &out,
+			Eval &res,
+			Dist ColorDist,
+			const unsigned char *in, int iw, int w, int h,
+			const T colors_ref[])
+	{
+		unsigned int score = 0;
+		for(int x = 0; x < w; ++x) for(int y = 0; y < h; ++y)
+		{
+			int i = y * 4 + x;
+			const unsigned char *pix = &in[(y * iw + x) * 4];
+
+			if(have_trans)
+			{
+				if(pix[3] == 0)
+				{
+					out.do_or(i, (1 << bpp) - 1);
+					continue;
+				}
+			}
+
+			T color(get<T>(pix));
+			int best = 0;
+			int bestdist = ColorDist(color, colors_ref[0]);
+			for(int k = 1; k < n_input; ++k)
+			{
+				int dist = ColorDist(color, colors_ref[k]);
+				if(dist < bestdist)
+				{
+					bestdist = dist;
+					best = k;
+				}
+			}
+			if(have_0_255)
+			{
+				int dist_0 = ColorDist(color, 0);
+				if(dist_0 <= bestdist)
+				{
+					bestdist = dist_0;
+					out.do_or(i, (1 << bpp) - 2);
+					score += bestdist;
+					continue;
+				}
+				int dist_255 = ColorDist(color, 255);
+				if(dist_255 <= bestdist)
+				{
+					bestdist = dist_255;
+					out.do_or(i, (1 << bpp) - 1);
+					score += bestdist;
+					continue;
+				}
+			}
+
+			// record
+			res.add(best, color);
+			out.do_or(i, best);
+			score += bestdist;
+		}
+		return score;
+	}
+
+	// REFINE_LOOP: refine, take result over only if score improved, loop until it did not
+	inline void s2tc_dxt5_encode_alpha_refine_loop(bitarray<uint64_t, 16, 3> &out, const unsigned char *in, int iw, int w, int h, unsigned char &a0, unsigned char &a1)
+	{
+		bitarray<uint64_t, 16, 3> out2;
+		unsigned char a0next = a0, a1next = a1;
+		unsigned int s = 0x7FFFFFFF;
+		for(;;)
+		{
+			unsigned char ramp[2] = {
+				a0next,
+				a1next
+			};
+			s2tc_evaluate_colors_result_t<unsigned char, int, 1> r2;
+			unsigned int s2 = s2tc_try_encode_block<unsigned char, int, 3, false, true, 2>(out2, r2, alpha_dist, in, iw, w, h, ramp);
+			if(s2 < s)
+			{
+				out = out2;
+				s = s2;
+				a0 = a0next;
+				a1 = a1next;
+				if(!r2.evaluate(a0next, a1next))
+					break;
+			}
+			else
+				break;
+			out2.clear();
+		}
+		if(a1 < a0)
+		{
+			std::swap(a0, a1);
+			for(int i = 0; i < 16; ++i) switch(out.get(i))
+			{
+				case 0:
+					out.set(i, 1);
+					break;
+				case 1:
+					out.set(i, 0);
+					break;
+				case 6:
+				case 7:
+					break;
+				default:
+					out.set(i, 7 - out.get(i));
+					break;
+			}
+		}
+	}
+
+	// REFINE_ALWAYS: refine, do not check
+	inline void s2tc_dxt5_encode_alpha_refine_always(bitarray<uint64_t, 16, 3> &out, const unsigned char *in, int iw, int w, int h, unsigned char &a0, unsigned char &a1)
+	{
+		unsigned char ramp[2] = {
+			a0,
+			a1
+		};
+		s2tc_evaluate_colors_result_t<unsigned char, int, 1> r2;
+		s2tc_try_encode_block<unsigned char, int, 3, false, true, 6>(out, r2, alpha_dist, in, iw, w, h, ramp);
+		r2.evaluate(a0, a1);
+
+		if(a1 < a0)
+		{
+			std::swap(a0, a1);
+			for(int i = 0; i < 16; ++i) switch(out.get(i))
+			{
+				case 0:
+					out.set(i, 1);
+					break;
+				case 1:
+					out.set(i, 0);
+					break;
+				case 6:
+				case 7:
+					break;
+				default:
+					out.set(i, 7 - out.get(i));
+					break;
+			}
+		}
+	}
+
+	// REFINE_NEVER: do not refine
+	inline void s2tc_dxt5_encode_alpha_refine_never(bitarray<uint64_t, 16, 3> &out, const unsigned char *in, int iw, int w, int h, unsigned char &a0, unsigned char &a1)
+	{
+		if(a1 < a0)
+			std::swap(a0, a1);
+		unsigned char ramp[6] = {
+			a0,
+			a1
+		};
+		s2tc_evaluate_colors_result_null_t<unsigned char> r2;
+		s2tc_try_encode_block<unsigned char, int, 3, false, true, 6>(out, r2, alpha_dist, in, iw, w, h, ramp);
+	}
+
+	// REFINE_LOOP: refine, take result over only if score improved, loop until it did not
+	template<ColorDistFunc ColorDist, bool have_trans>
+	inline void s2tc_dxt1_encode_color_refine_loop(bitarray<uint32_t, 16, 2> &out, const unsigned char *in, int iw, int w, int h, color_t &c0, color_t &c1)
+	{
+		bitarray<uint32_t, 16, 2> out2;
+		color_t c0next = c0, c1next = c1;
+		unsigned int s = 0x7FFFFFFF;
+		for(;;)
+		{
+			color_t ramp[2] = {
+				c0next,
+				c1next
+			};
+			s2tc_evaluate_colors_result_t<color_t, bigcolor_t, 1> r2;
+			unsigned int s2 = s2tc_try_encode_block<color_t, bigcolor_t, 2, have_trans, false, 2>(out2, r2, ColorDist, in, iw, w, h, ramp);
+			if(s2 < s)
+			{
+				out = out2;
+				s = s2;
+				c0 = c0next;
+				c1 = c1next;
+				if(!r2.evaluate(c0next, c1next))
+					break;
+			}
+			else
+				break;
+			out2.clear();
+		}
+		if(have_trans ? c1 < c0 : c0 < c1)
+		{
+			std::swap(c0, c1);
+			for(int i = 0; i < 16; ++i)
+				if(!(out.get(i) & 2))
+					out.do_xor(i, 1);
+		}
+	}
+
+	// REFINE_ALWAYS: refine, do not check
+	template<ColorDistFunc ColorDist, bool have_trans>
+	inline void s2tc_dxt1_encode_color_refine_always(bitarray<uint32_t, 16, 2> &out, const unsigned char *in, int iw, int w, int h, color_t &c0, color_t &c1)
+	{
+		color_t ramp[2] = {
+			c0,
+			c1
+		};
+		s2tc_evaluate_colors_result_t<color_t, bigcolor_t, 1> r2;
+		s2tc_try_encode_block<color_t, bigcolor_t, 2, have_trans, false, 2>(out, r2, ColorDist, in, iw, w, h, ramp);
+		r2.evaluate(c0, c1);
+		if(have_trans ? c1 < c0 : c0 < c1)
+		{
+			std::swap(c0, c1);
+			for(int i = 0; i < 16; ++i)
+				if(!(out.get(i) & 2))
+					out.do_xor(i, 1);
+		}
+	}
+
+	// REFINE_NEVER: do not refine
+	template<ColorDistFunc ColorDist, bool have_trans>
+	inline void s2tc_dxt1_encode_color_refine_never(bitarray<uint32_t, 16, 2> &out, const unsigned char *in, int iw, int w, int h, color_t &c0, color_t &c1)
+	{
+		if(have_trans ? c1 < c0 : c0 < c1)
+			std::swap(c0, c1);
+		color_t ramp[2] = {
+			c0,
+			c1
+		};
+		s2tc_evaluate_colors_result_null_t<color_t> r2;
+		s2tc_try_encode_block<color_t, bigcolor_t, 2, have_trans, false, 2>(out, r2, ColorDist, in, iw, w, h, ramp);
+	}
+
+	inline void s2tc_dxt3_encode_alpha(bitarray<uint64_t, 16, 4> &out, const unsigned char *in, int iw, int w, int h)
+	{
+		for(int x = 0; x < w; ++x) for(int y = 0; y < h; ++y)
+		{
+			int i = y * 4 + x;
+			const unsigned char *pix = &in[(y * iw + x) * 4];
+			out.do_or(i, pix[3]);
+		}
+	}
+
 	template<DxtMode dxt, ColorDistFunc ColorDist, CompressionMode mode, RefinementMode refine>
 	inline void s2tc_encode_block(unsigned char *out, const unsigned char *rgba, int iw, int w, int h, int nrandom)
 	{
@@ -353,7 +757,7 @@ namespace
 		{
 			// FAST: trick from libtxc_dxtn: just get brightest and darkest colors, and encode using these
 
-			color_t c0 = {0, 0, 0};
+			color_t c0(0);
 
 			// dummy values because we don't know whether the first pixel willw rite
 			c[0].r = 31;
@@ -450,7 +854,7 @@ namespace
 						maxa = max(maxa, ca[x]);
 					}
 				}
-				color_t len = { maxs.r - mins.r + 1, maxs.g - mins.g + 1, maxs.b - mins.b + 1 };
+				color_t len(maxs.r - mins.r + 1, maxs.g - mins.g + 1, maxs.b - mins.b + 1);
 				int lena = (dxt == DXT5) ? (maxa - (int) mina + 1) : 0;
 				for(x = 0; x < nrandom; ++x)
 				{
@@ -477,317 +881,83 @@ namespace
 				reduce_colors_inplace_2fixpoints(ca, n, m, alpha_dist, (unsigned char) 0, (unsigned char) 255);
 		}
 
-		if(refine == REFINE_NEVER)
-		{
-			if(dxt == DXT5)
-			{
-				if(ca[1] < ca[0])
-				{
-					// select mode with 6 = 0, 7 = 255
-					ca[2] = ca[0];
-					ca[0] = ca[1];
-					ca[1] = ca[2];
-				}
-			}
-			if((dxt == DXT1) ? (c[1] < c[0]) : (c[0] < c[1]))
-			// DXT1: select mode with 3 = transparent
-			// other: don't select this mode
-			{
-				c[2] = c[0];
-				c[0] = c[1];
-				c[1] = c[2];
-			}
-		}
-
-		bool refined;
-		do
-		{
-			int nc0 = 0, na0 = 0, sc0r = 0, sc0g = 0, sc0b = 0, sa0 = 0;
-			int nc1 = 0, na1 = 0, sc1r = 0, sc1g = 0, sc1b = 0, sa1 = 0;
-			if(refine == REFINE_LOOP)
-				refined = false;
-
-			memset(out, 0, (dxt == DXT1) ? 8 : 16);
-			for(x = 0; x < w; ++x)
-				for(y = 0; y < h; ++y)
-				{
-					int pindex = (x+y*4);
-					c[2].r = rgba[(x + y * iw) * 4 + 0];
-					c[2].g = rgba[(x + y * iw) * 4 + 1];
-					c[2].b = rgba[(x + y * iw) * 4 + 2];
-					ca[2]  = rgba[(x + y * iw) * 4 + 3];
-					switch(dxt)
-					{
-						case DXT5:
-							{
-								int da[4];
-								int bitindex = pindex * 3;
-								da[0] = alpha_dist(ca[0], ca[2]);
-								da[1] = alpha_dist(ca[1], ca[2]);
-								da[2] = alpha_dist(0, ca[2]);
-								da[3] = alpha_dist(255, ca[2]);
-								if(da[2] <= da[0] && da[2] <= da[1] && da[2] <= da[3])
-								{
-									// 6
-									++bitindex;
-									setbit(&out[2], bitindex);
-									++bitindex;
-									setbit(&out[2], bitindex);
-								}
-								else if(da[3] <= da[0] && da[3] <= da[1])
-								{
-									// 7
-									setbit(&out[2], bitindex);
-									++bitindex;
-									setbit(&out[2], bitindex);
-									++bitindex;
-									setbit(&out[2], bitindex);
-								}
-								else if(da[0] <= da[1])
-								{
-									// 0
-									if(refine != REFINE_NEVER)
-									{
-										++na0;
-										sa0 += ca[2];
-									}
-								}
-								else
-								{
-									// 1
-									setbit(&out[2], bitindex);
-									if(refine != REFINE_NEVER)
-									{
-										++na1;
-										sa1 += ca[2];
-									}
-								}
-								if(ColorDist(c[0], c[2]) > ColorDist(c[1], c[2]))
-								{
-									int bitindex = pindex * 2;
-									setbit(&out[12], bitindex);
-									if(refine != REFINE_NEVER)
-									{
-										++nc1;
-										sc1r += refine_component_encode<ColorDist>(c[2].r);
-										sc1g += refine_component_encode<ColorDist>(c[2].g);
-										sc1b += refine_component_encode<ColorDist>(c[2].b);
-									}
-								}
-								else
-								{
-									if(refine != REFINE_NEVER)
-									{
-										++nc0;
-										sc0r += refine_component_encode<ColorDist>(c[2].r);
-										sc0g += refine_component_encode<ColorDist>(c[2].g);
-										sc0b += refine_component_encode<ColorDist>(c[2].b);
-									}
-								}
-							}
-							break;
-						case DXT3:
-							{
-								int bitindex = pindex * 4;
-								setbit(&out[0], bitindex, ca[2]);
-							}
-							if(ColorDist(c[0], c[2]) > ColorDist(c[1], c[2]))
-							{
-								int bitindex = pindex * 2;
-								setbit(&out[12], bitindex);
-								if(refine != REFINE_NEVER)
-								{
-									++nc1;
-									sc1r += refine_component_encode<ColorDist>(c[2].r);
-									sc1g += refine_component_encode<ColorDist>(c[2].g);
-									sc1b += refine_component_encode<ColorDist>(c[2].b);
-								}
-							}
-							else
-							{
-								if(refine != REFINE_NEVER)
-								{
-									++nc0;
-									sc0r += refine_component_encode<ColorDist>(c[2].r);
-									sc0g += refine_component_encode<ColorDist>(c[2].g);
-									sc0b += refine_component_encode<ColorDist>(c[2].b);
-								}
-							}
-							break;
-						case DXT1:
-							{
-								// the normalmap-uses-alpha-0 hack cannot be used here
-								int bitindex = pindex * 2;
-								if(!ca[2])
-									setbit(&out[4], bitindex, 3);
-								else if(ColorDist(c[0], c[2]) > ColorDist(c[1], c[2]))
-								{
-									setbit(&out[4], bitindex);
-									if(refine != REFINE_NEVER)
-									{
-										++nc1;
-										sc1r += refine_component_encode<ColorDist>(c[2].r);
-										sc1g += refine_component_encode<ColorDist>(c[2].g);
-										sc1b += refine_component_encode<ColorDist>(c[2].b);
-									}
-								}
-								else
-								{
-									if(refine != REFINE_NEVER)
-									{
-										++nc0;
-										sc0r += refine_component_encode<ColorDist>(c[2].r);
-										sc0g += refine_component_encode<ColorDist>(c[2].g);
-										sc0b += refine_component_encode<ColorDist>(c[2].b);
-									}
-								}
-							}
-							break;
-					}
-				}
-			if(refine != REFINE_NEVER)
-			{
-				// REFINEMENT: trick from libtxc_dxtn: reassign the colors to an average of the colors encoded with that value
-
-				if(dxt == DXT5)
-				{
-					if(na0)
-						ca[0] = (2 * sa0 + na0) / (2 * na0);
-					if(na1)
-						ca[1] = (2 * sa1 + na1) / (2 * na1);
-				}
-				if(refine == REFINE_LOOP)
-				{
-					c[2] = c[0];
-					c[3] = c[1];
-				}
-				if(nc0)
-				{
-					c[0].r = refine_component_decode<ColorDist>((2 * sc0r + nc0) / (2 * nc0));
-					c[0].g = refine_component_decode<ColorDist>((2 * sc0g + nc0) / (2 * nc0));
-					c[0].b = refine_component_decode<ColorDist>((2 * sc0b + nc0) / (2 * nc0));
-				}
-				if(nc1)
-				{
-					c[1].r = refine_component_decode<ColorDist>((2 * sc1r + nc1) / (2 * nc1));
-					c[1].g = refine_component_decode<ColorDist>((2 * sc1g + nc1) / (2 * nc1));
-					c[1].b = refine_component_decode<ColorDist>((2 * sc1b + nc1) / (2 * nc1));
-				}
-
-				if(refine == REFINE_LOOP)
-				{
-					int score_01 = 0;
-					int score_23 = 0;
-					for(x = 0; x < w; ++x)
-						for(y = 0; y < h; ++y)
-						{
-							int pindex = (x+y*4);
-							c[4].r = rgba[(x + y * iw) * 4 + 0];
-							c[4].g = rgba[(x + y * iw) * 4 + 1];
-							c[4].b = rgba[(x + y * iw) * 4 + 2];
-							if(dxt == DXT1) // in DXT1, alpha 0 pixels are always skipped!
-							{
-								// check ORIGINAL alpha (DXT1 and DXT3 preserve it)
-								ca[4] = rgba[(x + y * iw) * 4 + 3];
-								if(!rgba[(x + y * iw) * 4 + 3])
-									continue;
-							}
-							int bitindex = pindex * 2;
-							if(testbit(&out[(dxt == DXT1 ? 4 : 12)], bitindex))
-							{
-								// we picked an 1
-								score_23 += ColorDist(c[3], c[4]);
-							}
-							else
-							{
-								// we picked a 0
-								score_23 += ColorDist(c[2], c[4]);
-							}
-							// we WILL run another loop iteration, if score_01 wins
-							score_01 += min(ColorDist(c[0], c[4]), ColorDist(c[1], c[4]));
-						}
-
-					if(score_23 <= score_01)
-					{
-						// refinement was BAD
-						c[0] = c[2];
-						c[1] = c[3];
-					}
-					else
-						refined = true;
-
-					// alpha refinement is always good and doesn't
-					// need to be checked because alpha is linear
-
-					// when looping, though, checking the
-					// alpha COULD help, but we usually
-					// loop twice anyway as refinement
-					// usually helps
-				}
-			}
-		}
-		while(refine == REFINE_LOOP && refined);
-
-		if(refine != REFINE_NEVER)
-		{
-			if(dxt == DXT5)
-			{
-				if(ca[1] < ca[0])
-				{
-					ca[2] = ca[0];
-					ca[0] = ca[1];
-					ca[1] = ca[2];
-					// swap the alphas
-					for(int pindex = 0; pindex < 16; ++pindex)
-					{
-						int bitindex_set = pindex * 3;
-						int bitindex_test = bitindex_set + 2;
-						if(!testbit(&out[2], bitindex_test))
-							xorbit(&out[2], bitindex_set);
-					}
-				}
-			}
-			if((dxt == DXT1) ? (c[1] < c[0]) : (c[0] < c[1]))
-			// DXT1: select mode with 3 = transparent
-			// other: don't select this mode
-			{
-				c[2] = c[0];
-				c[0] = c[1];
-				c[1] = c[2];
-				// swap the colors
-				if(dxt == DXT1)
-				{
-					out[4] ^= 0x55 & ~(out[4] >> 1);
-					out[5] ^= 0x55 & ~(out[5] >> 1);
-					out[6] ^= 0x55 & ~(out[6] >> 1);
-					out[7] ^= 0x55 & ~(out[7] >> 1);
-				}
-				else
-				{
-					out[12] ^= 0x55 & ~(out[12] >> 1);
-					out[13] ^= 0x55 & ~(out[13] >> 1);
-					out[14] ^= 0x55 & ~(out[14] >> 1);
-					out[15] ^= 0x55 & ~(out[15] >> 1);
-				}
-			}
-		}
-
 		switch(dxt)
 		{
-			case DXT5:
-				out[0] = ca[0];
-				out[1] = ca[1];
-			case DXT3:
-				out[8] = ((c[0].g & 0x07) << 5) | c[0].b;
-				out[9] = (c[0].r << 3) | (c[0].g >> 3);
-				out[10] = ((c[1].g & 0x07) << 5) | c[1].b;
-				out[11] = (c[1].r << 3) | (c[1].g >> 3);
-				break;
 			case DXT1:
-				out[0] = ((c[0].g & 0x07) << 5) | c[0].b;
-				out[1] = (c[0].r << 3) | (c[0].g >> 3);
-				out[2] = ((c[1].g & 0x07) << 5) | c[1].b;
-				out[3] = (c[1].r << 3) | (c[1].g >> 3);
+				{
+					bitarray<uint32_t, 16, 2> colorblock;
+					switch(refine)
+					{
+						case REFINE_NEVER:
+							s2tc_dxt1_encode_color_refine_never<ColorDist, true>(colorblock, rgba, iw, w, h, c[0], c[1]);
+							break;
+						case REFINE_ALWAYS:
+							s2tc_dxt1_encode_color_refine_always<ColorDist, true>(colorblock, rgba, iw, w, h, c[0], c[1]);
+							break;
+						case REFINE_LOOP:
+							s2tc_dxt1_encode_color_refine_loop<ColorDist, true>(colorblock, rgba, iw, w, h, c[0], c[1]);
+							break;
+					}
+					out[0] = ((c[0].g & 0x07) << 5) | c[0].b;
+					out[1] = (c[0].r << 3) | (c[0].g >> 3);
+					out[2] = ((c[1].g & 0x07) << 5) | c[1].b;
+					out[3] = (c[1].r << 3) | (c[1].g >> 3);
+					colorblock.tobytes(&out[4]);
+				}
+				break;
+			case DXT3:
+				{
+					bitarray<uint32_t, 16, 2> colorblock;
+					bitarray<uint64_t, 16, 4> alphablock;
+					switch(refine)
+					{
+						case REFINE_NEVER:
+							s2tc_dxt1_encode_color_refine_never<ColorDist, false>(colorblock, rgba, iw, w, h, c[0], c[1]);
+							break;
+						case REFINE_ALWAYS:
+							s2tc_dxt1_encode_color_refine_always<ColorDist, false>(colorblock, rgba, iw, w, h, c[0], c[1]);
+							break;
+						case REFINE_LOOP:
+							s2tc_dxt1_encode_color_refine_loop<ColorDist, false>(colorblock, rgba, iw, w, h, c[0], c[1]);
+							break;
+					}
+					s2tc_dxt3_encode_alpha(alphablock, rgba, iw, w, h);
+					alphablock.tobytes(&out[0]);
+					out[8] = ((c[0].g & 0x07) << 5) | c[0].b;
+					out[9] = (c[0].r << 3) | (c[0].g >> 3);
+					out[10] = ((c[1].g & 0x07) << 5) | c[1].b;
+					out[11] = (c[1].r << 3) | (c[1].g >> 3);
+					colorblock.tobytes(&out[12]);
+				}
+				break;
+			case DXT5:
+				{
+					bitarray<uint32_t, 16, 2> colorblock;
+					bitarray<uint64_t, 16, 3> alphablock;
+					switch(refine)
+					{
+						case REFINE_NEVER:
+							s2tc_dxt1_encode_color_refine_never<ColorDist, false>(colorblock, rgba, iw, w, h, c[0], c[1]);
+							s2tc_dxt5_encode_alpha_refine_never(alphablock, rgba, iw, w, h, ca[0], ca[1]);
+							break;
+						case REFINE_ALWAYS:
+							s2tc_dxt1_encode_color_refine_always<ColorDist, false>(colorblock, rgba, iw, w, h, c[0], c[1]);
+							s2tc_dxt5_encode_alpha_refine_always(alphablock, rgba, iw, w, h, ca[0], ca[1]);
+							break;
+						case REFINE_LOOP:
+							s2tc_dxt1_encode_color_refine_loop<ColorDist, false>(colorblock, rgba, iw, w, h, c[0], c[1]);
+							s2tc_dxt5_encode_alpha_refine_loop(alphablock, rgba, iw, w, h, ca[0], ca[1]);
+							break;
+					}
+					out[0] = ca[0];
+					out[1] = ca[1];
+					alphablock.tobytes(&out[2]);
+					out[8] = ((c[0].g & 0x07) << 5) | c[0].b;
+					out[9] = (c[0].r << 3) | (c[0].g >> 3);
+					out[10] = ((c[1].g & 0x07) << 5) | c[1].b;
+					out[11] = (c[1].r << 3) | (c[1].g >> 3);
+					colorblock.tobytes(&out[12]);
+				}
 				break;
 		}
 	}

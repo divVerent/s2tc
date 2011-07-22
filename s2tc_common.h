@@ -61,4 +61,101 @@ inline int testbit(const unsigned char *arr, int bit, int v = 1)
 	return (arr[byteidx(bit)] & (v << bitidx(bit)));
 }
 
+template<class T, int count, int width> class bitarray
+{
+	T bits;
+	public:
+	inline bitarray(): bits(0)
+	{
+	}
+	inline int get(size_t i) const
+	{
+		return (bits >> (i * width)) & ((T(1) << width) - 1);
+	}
+	inline void set(size_t i, int v)
+	{
+		size_t shift = i * width;
+		T mask = ((T(1) << width) - 1) << shift;
+		bits = (bits & ~mask) | (T(v) << shift);
+	}
+	inline void do_or(size_t i, int v)
+	{
+		bits |= (T(v) << (i * width));
+	}
+	inline void do_xor(size_t i, int v)
+	{
+		bits ^= (T(v) << (i * width));
+	}
+	inline void clear()
+	{
+		bits = 0;
+	}
+	inline unsigned char getbyte(size_t p) const
+	{
+		return (bits >> (p * 8)) & 0xFF;
+	}
+	inline size_t nbytes() const
+	{
+		return (count * width + 7) >> 3;
+	}
+	inline void tobytes(unsigned char *out) const
+	{
+		size_t s = nbytes();
+		for(size_t i = 0; i < s; ++i)
+			out[i] = getbyte(i);
+	}
+};
+
+template<int count, int width> class bitarray<void, count, width>
+{
+	unsigned char bits[count];
+	public:
+	inline bitarray(): bits()
+	{
+		clear();
+	}
+	inline int get(size_t i) const
+	{
+		return bits[i];
+	}
+	inline void set(size_t i, int v)
+	{
+		bits[i] = v;
+	}
+	inline void do_or(size_t i, int v)
+	{
+		bits[i] |= v;
+	}
+	inline void do_xor(size_t i, int v)
+	{
+		bits[i] ^= v;
+	}
+	inline void clear()
+	{
+		memset(bits, 0, sizeof(bits));
+	}
+	inline unsigned char getbyte(size_t p) const
+	{
+		size_t bitpos_min = p * 8;
+		size_t bitpos_max = p * 8 + 7;
+		size_t word_min = bitpos_min / width;
+		size_t word_max = bitpos_max / width;
+		int shift = bitpos_min % width;
+		unsigned char out = get(word_min) >> shift;
+		for(size_t i = word_min+1; i <= word_max; ++i)
+			out |= get(i) << ((i - word_min) * width - shift);
+		return out;
+	}
+	inline size_t nbytes() const
+	{
+		return (count * width + 7) >> 3;
+	}
+	inline void tobytes(unsigned char *out) const
+	{
+		size_t s = nbytes();
+		for(size_t i = 0; i < s; ++i)
+			out[i] = getbyte(i);
+	}
+};
+
 #endif
