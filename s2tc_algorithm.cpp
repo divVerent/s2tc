@@ -483,8 +483,64 @@ namespace
 	template <class T, class Big, int scale_l>
 	struct s2tc_evaluate_colors_result_t
 	{
-		// a possible implementation of inferred color/alpha values
-		// refining would go here
+		// uses:
+		//   Big << int
+		//   Big / int
+		//   Big + int
+		//   Big += T
+		//   Big * int
+		//   Big - Big
+		//   Big + Big
+		//   Big < Big
+		//   Big += Big
+		//   Big != T
+		// warning: INFERRED values!
+		// can't use this for colors
+		int n, Sl, Sll;
+		Big Sa, Sla;
+		inline s2tc_evaluate_colors_result_t():
+			n(), Sl(), Sll(), Sa(), Sla()
+		{
+		}
+		inline void add(int l, T a)
+		{
+			// from S*TC value order to natural order
+			l = (l == 0) ? 0 : (l == 1) ? scale_l : (l - 1);
+			n += 1;
+			Sl += l;
+			Sll += l*l;
+			Sa += a;
+			Sla += Big(a)*l;
+		}
+		inline bool evaluate(T &a, T &b)
+		{
+			int den = (Sll * n - Sl * Sl); // == n * SSll
+			if(den)
+			{
+				// float version
+				//double m = (Sla * n - Sa * Sl) / den; // == n * SSla
+				//double t = (Sa - Sl * m) / n;
+				//double tm = t + m * scale_l;
+				// integer version:
+				Big m = (((Sla * (scale_l * n) - Sa * Sl * scale_l) << 1) + den) / (den << 1); // actually scale_l * m
+				Big t = (((Sa * scale_l - m * Sl) << 1) + (scale_l * n)) / ((scale_l * n) << 1);
+				Big tm = t + m;
+				if(t != T(t))
+					return false;
+				if(tm != T(tm))
+					return false;
+				a = t;
+				b = tm;
+				return true;
+			}
+			else if(n)
+			{
+				a = b = ((Sa << 1) + n) / (n << 1);
+				return true;
+			}
+			else
+				return false;
+		}
 	};
 
 	template <class T>
@@ -574,47 +630,112 @@ namespace
 	// REFINE_LOOP: refine, take result over only if score improved, loop until it did not
 	inline void s2tc_dxt5_encode_alpha_refine_loop(bitarray<uint64_t, 16, 3> &out, const unsigned char *in, int iw, int w, int h, unsigned char &a0, unsigned char &a1)
 	{
-		bitarray<uint64_t, 16, 3> out2;
+		bitarray<uint64_t, 16, 3> out5, out7;
 		unsigned char a0next = a0, a1next = a1;
 		unsigned int s = 0x7FFFFFFF;
+		bool mode_le = true;
 		for(;;)
 		{
-			unsigned char ramp[2] = {
+			unsigned char ramp5[6] = {
 				a0next,
-				a1next
+				a1next,
+				(a0next * (int)4 + a1next * (int)1 + 2) / 5,
+				(a0next * (int)3 + a1next * (int)2 + 2) / 5,
+				(a0next * (int)2 + a1next * (int)3 + 2) / 5,
+				(a0next * (int)1 + a1next * (int)4 + 2) / 5
 			};
-			s2tc_evaluate_colors_result_t<unsigned char, int, 1> r2;
-			unsigned int s2 = s2tc_try_encode_block<unsigned char, int, 3, false, true, 2>(out2, r2, alpha_dist, in, iw, w, h, ramp);
-			if(s2 < s)
+			unsigned char ramp7[8] = {
+				a0next,
+				a1next,
+				(a0next * (int)6 + a1next * (int)1 + 3) / 7,
+				(a0next * (int)5 + a1next * (int)2 + 3) / 7,
+				(a0next * (int)4 + a1next * (int)3 + 3) / 7,
+				(a0next * (int)3 + a1next * (int)4 + 3) / 7,
+				(a0next * (int)2 + a1next * (int)5 + 3) / 7,
+				(a0next * (int)1 + a1next * (int)6 + 3) / 7
+			};
+			s2tc_evaluate_colors_result_t<unsigned char, int, 5> r5;
+			s2tc_evaluate_colors_result_t<unsigned char, int, 7> r7;
+			unsigned int s5 = s2tc_try_encode_block<unsigned char, int, 3, false, true, 6>(out5, r5, alpha_dist, in, iw, w, h, ramp5);
+			unsigned int s7 = s2tc_try_encode_block<unsigned char, int, 3, false, false, 8>(out7, r7, alpha_dist, in, iw, w, h, ramp7);
+			if(s5 < s7)
 			{
-				out = out2;
-				s = s2;
-				a0 = a0next;
-				a1 = a1next;
-				if(!r2.evaluate(a0next, a1next))
+				if(s5 < s)
+				{
+					out = out5;
+					mode_le = true;
+					s = s5;
+					a0 = a0next;
+					a1 = a1next;
+					if(!r5.evaluate(a0next, a1next))
+						break;
+				}
+				else
 					break;
 			}
 			else
-				break;
-			out2.clear();
-		}
-		if(a1 < a0)
-		{
-			std::swap(a0, a1);
-			for(int i = 0; i < 16; ++i) switch(out.get(i))
 			{
-				case 0:
-					out.set(i, 1);
+				if(s7 < s)
+				{
+					out = out7;
+					mode_le = false;
+					s = s7;
+					a0 = a0next;
+					a1 = a1next;
+					if(!r7.evaluate(a0next, a1next))
+						break;
+				}
+				else
 					break;
-				case 1:
-					out.set(i, 0);
-					break;
-				case 6:
-				case 7:
-					break;
-				default:
-					out.set(i, 7 - out.get(i));
-					break;
+			}
+			out5.clear();
+			out7.clear();
+		}
+		if(mode_le)
+		{
+			if(a1 < a0)
+			{
+				std::swap(a0, a1);
+				for(int i = 0; i < 16; ++i) switch(out.get(i))
+				{
+					case 0:
+						out.set(i, 1);
+						break;
+					case 1:
+						out.set(i, 0);
+						break;
+					case 6:
+					case 7:
+						break;
+					default:
+						out.set(i, 7 - out.get(i));
+						break;
+				}
+			}
+		}
+		else
+		{
+			if(a0 < a1)
+			{
+				std::swap(a0, a1);
+				for(int i = 0; i < 16; ++i) switch(out.get(i))
+				{
+					case 0:
+						out.set(i, 1);
+						break;
+					case 1:
+						out.set(i, 0);
+						break;
+					default:
+						out.set(i, 9 - out.get(i));
+						break;
+				}
+			}
+			else if(a1 == a0)
+			{
+				// we requested the 7-colors ramp, but all pixels are equal!
+				// we can instead clear the bit array and ignore the problem
+				out.clear();
 			}
 		}
 	}
@@ -622,31 +743,80 @@ namespace
 	// REFINE_ALWAYS: refine, do not check
 	inline void s2tc_dxt5_encode_alpha_refine_always(bitarray<uint64_t, 16, 3> &out, const unsigned char *in, int iw, int w, int h, unsigned char &a0, unsigned char &a1)
 	{
-		unsigned char ramp[2] = {
+		bitarray<uint64_t, 16, 3> out5, out7;
+		unsigned char ramp5[6] = {
 			a0,
-			a1
+			a1,
+			(a0 * (int)4 + a1 * (int)1 + 2) / 5,
+			(a0 * (int)3 + a1 * (int)2 + 2) / 5,
+			(a0 * (int)2 + a1 * (int)3 + 2) / 5,
+			(a0 * (int)1 + a1 * (int)4 + 2) / 5
 		};
-		s2tc_evaluate_colors_result_t<unsigned char, int, 1> r2;
-		s2tc_try_encode_block<unsigned char, int, 3, false, true, 6>(out, r2, alpha_dist, in, iw, w, h, ramp);
-		r2.evaluate(a0, a1);
-
-		if(a1 < a0)
+		unsigned char ramp7[8] = {
+			a0,
+			a1,
+			(a0 * (int)6 + a1 * (int)1 + 3) / 7,
+			(a0 * (int)5 + a1 * (int)2 + 3) / 7,
+			(a0 * (int)4 + a1 * (int)3 + 3) / 7,
+			(a0 * (int)3 + a1 * (int)4 + 3) / 7,
+			(a0 * (int)2 + a1 * (int)5 + 3) / 7,
+			(a0 * (int)1 + a1 * (int)6 + 3) / 7
+		};
+		s2tc_evaluate_colors_result_t<unsigned char, int, 5> r5;
+		s2tc_evaluate_colors_result_t<unsigned char, int, 7> r7;
+		unsigned int s5 = s2tc_try_encode_block<unsigned char, int, 3, false, true, 6>(out5, r5, alpha_dist, in, iw, w, h, ramp5);
+		unsigned int s7 = s2tc_try_encode_block<unsigned char, int, 3, false, false, 8>(out7, r7, alpha_dist, in, iw, w, h, ramp7);
+		if(s5 < s7)
 		{
-			std::swap(a0, a1);
-			for(int i = 0; i < 16; ++i) switch(out.get(i))
+			out = out5;
+			r5.evaluate(a0, a1);
+
+			if(a1 < a0)
 			{
-				case 0:
-					out.set(i, 1);
-					break;
-				case 1:
-					out.set(i, 0);
-					break;
-				case 6:
-				case 7:
-					break;
-				default:
-					out.set(i, 7 - out.get(i));
-					break;
+				std::swap(a0, a1);
+				for(int i = 0; i < 16; ++i) switch(out.get(i))
+				{
+					case 0:
+						out.set(i, 1);
+						break;
+					case 1:
+						out.set(i, 0);
+						break;
+					case 6:
+					case 7:
+						break;
+					default:
+						out.set(i, 7 - out.get(i));
+						break;
+				}
+			}
+		}
+		else
+		{
+			out = out7;
+			r7.evaluate(a0, a1);
+
+			if(a0 < a1)
+			{
+				std::swap(a0, a1);
+				for(int i = 0; i < 16; ++i) switch(out.get(i))
+				{
+					case 0:
+						out.set(i, 1);
+						break;
+					case 1:
+						out.set(i, 0);
+						break;
+					default:
+						out.set(i, 9 - out.get(i));
+						break;
+				}
+			}
+			else if(a1 == a0)
+			{
+				// we requested the 7-colors ramp, but all pixels are equal!
+				// we can instead clear the bit array and ignore the problem
+				out.clear();
 			}
 		}
 	}
@@ -654,14 +824,80 @@ namespace
 	// REFINE_NEVER: do not refine
 	inline void s2tc_dxt5_encode_alpha_refine_never(bitarray<uint64_t, 16, 3> &out, const unsigned char *in, int iw, int w, int h, unsigned char &a0, unsigned char &a1)
 	{
-		if(a1 < a0)
-			std::swap(a0, a1);
-		unsigned char ramp[6] = {
+		bitarray<uint64_t, 16, 3> out5, out7;
+		unsigned char ramp5[6] = {
 			a0,
-			a1
+			a1,
+			(a0 * (int)4 + a1 * (int)1 + 2) / 5,
+			(a0 * (int)3 + a1 * (int)2 + 2) / 5,
+			(a0 * (int)2 + a1 * (int)3 + 2) / 5,
+			(a0 * (int)1 + a1 * (int)4 + 2) / 5
 		};
-		s2tc_evaluate_colors_result_null_t<unsigned char> r2;
-		s2tc_try_encode_block<unsigned char, int, 3, false, true, 6>(out, r2, alpha_dist, in, iw, w, h, ramp);
+		unsigned char ramp7[8] = {
+			a0,
+			a1,
+			(a0 * (int)6 + a1 * (int)1 + 3) / 7,
+			(a0 * (int)5 + a1 * (int)2 + 3) / 7,
+			(a0 * (int)4 + a1 * (int)3 + 3) / 7,
+			(a0 * (int)3 + a1 * (int)4 + 3) / 7,
+			(a0 * (int)2 + a1 * (int)5 + 3) / 7,
+			(a0 * (int)1 + a1 * (int)6 + 3) / 7
+		};
+		s2tc_evaluate_colors_result_null_t<unsigned char> r5;
+		s2tc_evaluate_colors_result_null_t<unsigned char> r7;
+		unsigned int s5 = s2tc_try_encode_block<unsigned char, int, 3, false, true, 6>(out5, r5, alpha_dist, in, iw, w, h, ramp5);
+		unsigned int s7 = s2tc_try_encode_block<unsigned char, int, 3, false, false, 8>(out7, r7, alpha_dist, in, iw, w, h, ramp7);
+		if(s5 < s7)
+		{
+			out = out5;
+
+			if(a1 < a0)
+			{
+				std::swap(a0, a1);
+				for(int i = 0; i < 16; ++i) switch(out.get(i))
+				{
+					case 0:
+						out.set(i, 1);
+						break;
+					case 1:
+						out.set(i, 0);
+						break;
+					case 6:
+					case 7:
+						break;
+					default:
+						out.set(i, 7 - out.get(i));
+						break;
+				}
+			}
+		}
+		else
+		{
+			out = out7;
+
+			if(a0 < a1)
+			{
+				std::swap(a0, a1);
+				for(int i = 0; i < 16; ++i) switch(out.get(i))
+				{
+					case 0:
+						out.set(i, 1);
+						break;
+					case 1:
+						out.set(i, 0);
+						break;
+					default:
+						out.set(i, 9 - out.get(i));
+						break;
+				}
+			}
+			else if(a1 == a0)
+			{
+				// we requested the 7-colors ramp, but all pixels are equal!
+				// we can instead clear the bit array and ignore the problem
+				out.clear();
+			}
+		}
 	}
 
 	// REFINE_LOOP: refine, take result over only if score improved, loop until it did not

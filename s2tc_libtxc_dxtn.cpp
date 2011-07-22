@@ -128,13 +128,25 @@ void fetch_2d_texel_rgba_dxt5(GLint srcRowStride, const GLubyte *pixdata,
 	++abit;
 	if(testbit(&blksrc[2], abit))
 		ab |= 4;
-	switch(ab)
+	if(a1 >= a)
 	{
-		case 0:                         break;
-		case 1:  a = a1;                break;
-		case 6:  if(a1 >= a) { a = 0;   break; }
-		case 7:  if(a1 >= a) { a = 255; break; }
-		default: if((i^j) & 1) a = a1;  break;
+		switch(ab)
+		{
+			case 0:                                              break;
+			case 1:  a = a1;                                     break;
+			case 6:  a = 0;                                      break;
+			case 7:  a = 255;                                    break;
+			default: a = ((6 - ab) * a + (ab - 1) * a1 + 2) / 5; break;
+		}
+	}
+	else
+	{
+		switch(ab)
+		{
+			case 0:                                              break;
+			case 1:  a = a1;                                     break;
+			default: a = ((8 - ab) * a + (ab - 1) * a1 + 3) / 7; break;
+		}
 	}
 	t[3] = a;
 }
