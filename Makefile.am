@@ -5,7 +5,8 @@ AM_CPPFLAGS = -DENABLE_RUNTIME_LINKING
 endif
 
 if ENABLE_TOOLS
-bin_PROGRAMS = s2tc_compress s2tc_decompress
+bin_PROGRAMS = s2tc_compress s2tc_decompress s2tc_from_s3tc
+s2tc_from_s3tc_SOURCES = s2tc_from_s3tc.cpp s2tc_license.h
 s2tc_compress_SOURCES = s2tc_compress.cpp txc_dxtn.h s2tc_license.h
 s2tc_decompress_SOURCES = s2tc_decompress.cpp txc_dxtn.h s2tc_license.h
 if ENABLE_RUNTIME_LINKING
