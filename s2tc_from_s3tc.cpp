@@ -157,7 +157,7 @@ void convert_dxt5(unsigned char *buf)
 		// 110 -> 110
 		// 111 -> 111
 
-		pixels = (pixels & ~((((pixels >> 1) ^ (pixels >> 2)) & 01111111111111111ull) * 7)) | ((((pixels >> 1) ^ (pixels >> 2)) & 00101101001011010ull) * 7);
+		pixels = (pixels & ~((((pixels >> 1) ^ (pixels >> 2)) & 01111111111111111ull) * 7)) | (((pixels >> 1) ^ (pixels >> 2)) & 00101101001011010ull);
 	}
 	else
 	{
@@ -171,7 +171,7 @@ void convert_dxt5(unsigned char *buf)
 		// 110 -> 001 or 000
 		// 111 -> 001 or 000
 
-		pixels = (pixels & ~((((pixels >> 1) | (pixels >> 2)) & 01111111111111111ull) * 7)) | ((((pixels >> 1) | (pixels >> 2)) & 00101101001011010ull) * 7);
+		pixels = (pixels & ~((((pixels >> 1) | (pixels >> 2)) & 01111111111111111ull) * 7)) | (((pixels >> 1) | (pixels >> 2)) & 00101101001011010ull);
 
 		// S2TC conformance: always use the same order of a, a1
 		// swap
