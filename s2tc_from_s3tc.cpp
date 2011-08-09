@@ -144,7 +144,7 @@ void convert_dxt5(unsigned char *buf)
 {
 	unsigned int a  = buf[0];
 	unsigned int a1 = buf[1];
-	uint64_t pixels = buf[2] | (((uint32_t)buf[3]) << 8) | (((uint32_t)buf[4]) << 16) | (((uint32_t)buf[5]) << 24) | (((uint64_t)buf[6]) << 32) | (((uint64_t)buf[7]) << 48);
+	uint64_t pixels = buf[2] | (((uint32_t)buf[3]) << 8) | (((uint32_t)buf[4]) << 16) | (((uint32_t)buf[5]) << 24) | (((uint64_t)buf[6]) << 32) | (((uint64_t)buf[7]) << 40);
 	if(a1 >= a)
 	{
 		// we want to map:
@@ -157,7 +157,7 @@ void convert_dxt5(unsigned char *buf)
 		// 110 -> 110
 		// 111 -> 111
 
-		pixels = (pixels & ~((((pixels >> 1) ^ (pixels >> 2)) & 01111111111111111ull) * 7)) | ((((pixels >> 1) ^ (pixels >> 2)) & 00101010101010101ull) * 7);
+		pixels = (pixels & ~((((pixels >> 1) ^ (pixels >> 2)) & 01111111111111111ull) * 7)) | ((((pixels >> 1) ^ (pixels >> 2)) & 00101101001011010ull) * 7);
 	}
 	else
 	{
@@ -171,7 +171,7 @@ void convert_dxt5(unsigned char *buf)
 		// 110 -> 001 or 000
 		// 111 -> 001 or 000
 
-		pixels = (pixels & ~((((pixels >> 1) | (pixels >> 2)) & 01111111111111111ull) * 7)) | ((((pixels >> 1) | (pixels >> 2)) & 00101010101010101ull) * 7);
+		pixels = (pixels & ~((((pixels >> 1) | (pixels >> 2)) & 01111111111111111ull) * 7)) | ((((pixels >> 1) | (pixels >> 2)) & 00101101001011010ull) * 7);
 
 		// S2TC conformance: always use the same order of a, a1
 		// swap
