@@ -68,14 +68,17 @@ EOF
 	coltitle "sixteen"
 	if $use_compressonator; then
 		coltitle "compressonator"
+		coltitle "compressonator->S2TC"
 	fi
 	if $use_nvcompress; then
 		coltitle "nvcompress"
+		coltitle "nvcompress->S2TC"
 	fi
 	coltitle "rand32_sRGB_mixed_l"
 
 	if $use_libtxc_dxtn; then
 		coltitle "libtxc_dxtn"
+		coltitle "libtxc_dxtn-S2TC"
 	fi
 	coltitle "faster_wavg_a"
 	coltitle "faster_wavg_l"
@@ -226,17 +229,23 @@ for i in ba_grass_cc dxtfail floor_tread01_norm fract001 base_concrete1a disable
 	if $use_compressonator; then
 		timing wine "c:/Program Files (x86)/AMD/The Compressonator 1.50/TheCompressonator.exe" -convert -overwrite -mipmaps "$i".tga "$i"-amdcompress.dds -codec DXTC.dll +fourCC $fourcc -mipper BoxFilter.dll
 		html "$i"-amdcompress.dds
+		timing bin/s2tc_from_s3tc -i "$i"-amdcompress.dds -o "$i"-amdcompress-s2tc.dds
+		html "$i"-amdcompress-s2tc.dds
 	fi
 
 	if $use_nvcompress; then
 		timing nvcompress $nvopts "$i".tga "$i"-nvcompress.dds
 		html "$i"-nvcompress.dds
+		timing bin/s2tc_from_s3tc -i "$i"-nvcompress.dds -o "$i"-nvcompress-s2tc.dds
+		html "$i"-nvcompress-s2tc.dds
 	fi
 
 	S2TC_DITHER_MODE=FLOYDSTEINBERG S2TC_COLORDIST_MODE=$goodmetric S2TC_RANDOM_COLORS=32 S2TC_REFINE_COLORS=LOOP \
-	 t "$i".tga "$i"-rand32-mrgb-l.dds bin/s2tc_compress -t $fourcc
+	t "$i".tga "$i"-rand32-mrgb-l.dds bin/s2tc_compress -t $fourcc
 	if $use_libtxc_dxtn; then
 		t "$i".tga "$i"-libtxc_dxtn.dds   bin/s2tc_compress -t $fourcc -l /usr/lib/libtxc_dxtn.so
+		timing bin/s2tc_from_s3tc -i "$i"-libtxc_dxtn.dds -o "$i"-libtxc_dxtn-s2tc.dds
+		html "$i"-libtxc_dxtn-s2tc.dds
 	fi
 	S2TC_DITHER_MODE=SIMPLE         S2TC_COLORDIST_MODE=WAVG        S2TC_RANDOM_COLORS=-1 S2TC_REFINE_COLORS=ALWAYS \
 	t "$i".tga "$i"-faster-wavg-r.dds bin/s2tc_compress -t $fourcc
