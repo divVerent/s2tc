@@ -140,55 +140,6 @@ void convert_dxt1a(unsigned char *buf)
 	buf[7] = (pixels >> 24) & 0xFF;
 }
 
-void convert_dxt5(unsigned char *buf)
-{
-	unsigned int a  = buf[0];
-	unsigned int a1 = buf[1];
-	uint64_t pixels = buf[2] | (((uint32_t)buf[3]) << 8) | (((uint32_t)buf[4]) << 16) | (((uint32_t)buf[5]) << 24) | (((uint64_t)buf[6]) << 32) | (((uint64_t)buf[7]) << 48);
-	if(a1 >= a)
-	{
-		// we want to map:
-		// 000 -> 000
-		// 001 -> 001
-		// 010 -> 000 or 001
-		// 011 -> 000 or 001
-		// 100 -> 001 or 000
-		// 101 -> 001 or 000
-		// 110 -> 110
-		// 111 -> 111
-
-		pixels = (pixels & ~((((pixels >> 1) ^ (pixels >> 2)) & 01111111111111111ull) * 7)) | ((((pixels >> 1) ^ (pixels >> 2)) & 00101010101010101ull) * 7);
-	}
-	else
-	{
-		// we want to map:
-		// 000 -> 000
-		// 001 -> 001
-		// 010 -> 000 or 001
-		// 011 -> 000 or 001
-		// 100 -> 000 or 001
-		// 101 -> 001 or 000
-		// 110 -> 001 or 000
-		// 111 -> 001 or 000
-
-		pixels = (pixels & ~((((pixels >> 1) | (pixels >> 2)) & 01111111111111111ull) * 7)) | ((((pixels >> 1) | (pixels >> 2)) & 00101010101010101ull) * 7);
-
-		// S2TC conformance: always use the same order of a, a1
-		// swap
-		std::swap(a1, a);
-		// invert
-		pixels ^= 01111111111111111ull;
-	}
-	buf[0] = a;
-	buf[1] = a1;
-	buf[2] = pixels & 0xFF;
-	buf[3] = (pixels >> 8) & 0xFF;
-	buf[4] = (pixels >> 16) & 0xFF;
-	buf[5] = (pixels >> 24) & 0xFF;
-	buf[6] = (pixels >> 32) & 0xFF;
-	buf[7] = (pixels >> 40) & 0xFF;
-}
-
 int main(int argc, char **argv)
 {
 	const char *infile = NULL, *outfile = NULL;
@@ -257,8 +208,6 @@ int main(int argc, char **argv)
 			convert_dxt1a(buf);
 		else
 			convert_dxt1(buf + 8);
-		if(mode == DXT5)
-			convert_dxt5(buf);
 		fwrite(buf, blocksize, 1, outfh);
 	}
 
