@@ -34,35 +34,50 @@
 
 namespace
 {
+	template<class T> struct color_type_info
+	{
+	};
+	template<> struct color_type_info<unsigned char>
+	{
+		static const unsigned char min_value = 0;
+		static const unsigned char max_value = 255;
+	};
+
 	struct color_t
 	{
 		signed char r, g, b;
-
-		inline color_t(): r(0), g(0), b(0)
-		{
-		}
-
-		inline color_t(signed char r_, signed char g_, signed char b_): r(r_), g(g_), b(b_)
-		{
-		}
-
-		inline color_t(int i): r(i >> 3), g(i >> 2), b(i >> 3)
-		{
-		}
-
-		inline bool operator<(const color_t &c)
-		{
-			signed char d;
-			d = r - c.r;
-			if(d)
-				return d < 0;
-			d = g - c.g;
-			if(d)
-				return d < 0;
-			d = b - c.b;
-			return d < 0;
-		}
 	};
+	inline color_t make_color_t()
+	{
+		return (color_t) {0, 0, 0};
+	}
+	inline color_t make_color_t(signed char r_, signed char g_, signed char b_)
+	{
+		return (color_t) {r_, g_, b_};
+	}
+	inline color_t make_color_t(int i)
+	{
+		return (color_t) {i >> 3, i >> 2, i >> 3};
+	}
+	inline bool operator<(const color_t &a, const color_t &b)
+	{
+		signed char d;
+		d = a.r - b.r;
+		if(d)
+			return d < 0;
+		d = a.g - b.g;
+		if(d)
+			return d < 0;
+		d = a.b - b.b;
+		return d < 0;
+	}
+	template<> struct color_type_info<color_t>
+	{
+		static const color_t min_value;
+		static const color_t max_value;
+	};
+	const color_t color_type_info<color_t>::min_value = { 0, 0, 0 };
+	const color_t color_type_info<color_t>::max_value = { 31, 63, 31 };
 
 	struct bigcolor_t
 	{
@@ -137,7 +152,7 @@ namespace
 
 	std::ostream &operator<<(std::ostream &ost, const color_t &c)
 	{
-		return ost << "color_t(" << int(c.r) << ", " << int(c.g) << ", " << int(c.b) << ")";
+		return ost << "make_color_t(" << int(c.r) << ", " << int(c.g) << ", " << int(c.b) << ")";
 	}
 
 	std::ostream &operator<<(std::ostream &ost, const bigcolor_t &c)
@@ -545,7 +560,7 @@ namespace
 			}
 			if(have_0_255)
 			{
-				int dist_0 = ColorDist(color, 0);
+				int dist_0 = ColorDist(color, color_type_info<T>::min_value);
 				if(dist_0 <= bestdist)
 				{
 					bestdist = dist_0;
@@ -553,7 +568,7 @@ namespace
 					score += bestdist;
 					continue;
 				}
-				int dist_255 = ColorDist(color, 255);
+				int dist_255 = ColorDist(color, color_type_info<T>::max_value);
 				if(dist_255 <= bestdist)
 				{
 					bestdist = dist_255;
@@ -750,14 +765,13 @@ namespace
 	{
 		color_t c[16 + (nrandom >= 0 ? nrandom : 0)];
 		unsigned char ca[16 + (nrandom >= 0 ? nrandom : 0)];
-		int n = 0, m = 0;
 		int x, y;
 
 		if(mode == MODE_FAST)
 		{
 			// FAST: trick from libtxc_dxtn: just get brightest and darkest colors, and encode using these
 
-			color_t c0(0);
+			color_t c0 = make_color_t(0, 0, 0);
 
 			// dummy values because we don't know whether the first pixel willw rite
 			c[0].r = 31;
@@ -808,13 +822,11 @@ namespace
 						}
 					}
 				}
-
-			// if ALL pixels were transparent, this won't stop us
-
-			m = n = 2;
 		}
 		else
 		{
+			int n = 0, m = 0;
+
 			for(x = 0; x < w; ++x)
 				for(y = 0; y < h; ++y)
 				{
@@ -854,7 +866,7 @@ namespace
 						maxa = max(maxa, ca[x]);
 					}
 				}
-				color_t len(maxs.r - mins.r + 1, maxs.g - mins.g + 1, maxs.b - mins.b + 1);
+				color_t len = make_color_t(maxs.r - mins.r + 1, maxs.g - mins.g + 1, maxs.b - mins.b + 1);
 				int lena = (dxt == DXT5) ? (maxa - (int) mina + 1) : 0;
 				for(x = 0; x < nrandom; ++x)
 				{
