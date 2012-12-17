@@ -1309,8 +1309,10 @@ void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h, i
 	{
 		case 3:
 			rgb565_image<3>(out, rgba, w, h, alphabits, dither);
+			break;
 		case 4:
 		default:
 			rgb565_image<4>(out, rgba, w, h, alphabits, dither);
+			break;
 	}
 }
