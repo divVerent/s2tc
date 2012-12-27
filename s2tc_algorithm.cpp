@@ -59,6 +59,10 @@ namespace
 	{
 		return (color_t) {i >> 3, i >> 2, i >> 3};
 	}
+	inline bool operator==(const color_t &a, const color_t &b)
+	{
+		return a.r == b.r && a.g == b.g && a.b == b.b;
+	}
 	inline bool operator<(const color_t &a, const color_t &b)
 	{
 		signed char d;
@@ -70,6 +74,56 @@ namespace
 			return d < 0;
 		d = a.b - b.b;
 		return d < 0;
+	}
+	inline color_t &operator--(color_t &c)
+	{
+		if(c.b > 0)
+		{
+			--c.b;
+		}
+		else if(c.g > 0)
+		{
+			c.b = 31;
+			--c.g;
+		}
+		else if(c.r > 0)
+		{
+			c.b = 31;
+			c.g = 63;
+			--c.r;
+		}
+		else
+		{
+			c.b = 31;
+			c.g = 63;
+			c.r = 31;
+		}
+		return c;
+	}
+	inline color_t &operator++(color_t &c)
+	{
+		if(c.b < 31)
+		{
+			++c.b;
+		}
+		else if(c.g < 63)
+		{
+			c.b = 0;
+			++c.g;
+		}
+		else if(c.r < 31)
+		{
+			c.b = 0;
+			c.g = 0;
+			++c.r;
+		}
+		else
+		{
+			c.b = 0;
+			c.g = 0;
+			c.r = 0;
+		}
+		return c;
 	}
 	template<> struct color_type_info<color_t>
 	{
@@ -613,6 +667,21 @@ namespace
 				break;
 			out2.clear();
 		}
+
+		if(a1 == a0)
+		{
+			if(a0 == 255)
+				--a1;
+			else
+				++a1;
+			for(int i = 0; i < 16; ++i) switch(out.get(i))
+			{
+				case 1:
+					out.set(i, 0);
+					break;
+			}
+		}
+
 		if(a1 < a0)
 		{
 			std::swap(a0, a1);
@@ -644,6 +713,20 @@ namespace
 		s2tc_evaluate_colors_result_t<unsigned char, int, 1> r2;
 		s2tc_try_encode_block<unsigned char, int, 3, false, true, 6>(out, r2, alpha_dist, in, iw, w, h, ramp);
 		r2.evaluate(a0, a1);
+
+		if(a1 == a0)
+		{
+			if(a0 == 255)
+				--a1;
+			else
+				++a1;
+			for(int i = 0; i < 16; ++i) switch(out.get(i))
+			{
+				case 1:
+					out.set(i, 0);
+					break;
+			}
+		}
 
 		if(a1 < a0)
 		{
@@ -707,6 +790,18 @@ namespace
 				break;
 			out2.clear();
 		}
+
+		if(c0 == c1)
+		{
+			if(c0 == color_type_info<color_t>::max_value)
+				--c1;
+			else
+				++c1;
+			for(int i = 0; i < 16; ++i)
+				if(!(out.get(i) == 1))
+					out.set(i, 0);
+		}
+
 		if(have_trans ? c1 < c0 : c0 < c1)
 		{
 			std::swap(c0, c1);
@@ -727,6 +822,18 @@ namespace
 		s2tc_evaluate_colors_result_t<color_t, bigcolor_t, 1> r2;
 		s2tc_try_encode_block<color_t, bigcolor_t, 2, have_trans, false, 2>(out, r2, ColorDist, in, iw, w, h, ramp);
 		r2.evaluate(c0, c1);
+
+		if(c0 == c1)
+		{
+			if(c0 == color_type_info<color_t>::max_value)
+				--c1;
+			else
+				++c1;
+			for(int i = 0; i < 16; ++i)
+				if(!(out.get(i) == 1))
+					out.set(i, 0);
+		}
+
 		if(have_trans ? c1 < c0 : c0 < c1)
 		{
 			std::swap(c0, c1);
@@ -891,6 +998,26 @@ namespace
 			reduce_colors_inplace(c, n, m, ColorDist);
 			if(dxt == DXT5)
 				reduce_colors_inplace_2fixpoints(ca, n, m, alpha_dist, (unsigned char) 0, (unsigned char) 255);
+		}
+
+		// equal colors are BAD
+		if(c[0] == c[1])
+		{
+			if(c[0] == color_type_info<color_t>::max_value)
+				--c[1];
+			else
+				++c[1];
+		}
+
+		if(dxt == DXT5)
+		{
+			if(ca[0] == ca[1])
+			{
+				if(ca[0] == 255)
+					--ca[1];
+				else
+					++ca[1];
+			}
 		}
 
 		switch(dxt)
