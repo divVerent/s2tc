@@ -57,7 +57,7 @@ namespace
 	}
 	inline color_t make_color_t(int i)
 	{
-		return (color_t) {i >> 3, i >> 2, i >> 3};
+		return (color_t) {(signed char)(i >> 3), (signed char)(i >> 2), (signed char)(i >> 3)};
 	}
 	inline bool operator==(const color_t &a, const color_t &b)
 	{
@@ -710,7 +710,7 @@ namespace
 			a1
 		};
 		s2tc_evaluate_colors_result_t<unsigned char, int, 1> r2;
-		s2tc_try_encode_block<unsigned char, int, 3, false, true, 6>(out, r2, alpha_dist, in, iw, w, h, ramp);
+		s2tc_try_encode_block<unsigned char, int, 3, false, true, 2>(out, r2, alpha_dist, in, iw, w, h, ramp);
 		r2.evaluate(a0, a1);
 
 		if(a1 == a0)
@@ -758,7 +758,7 @@ namespace
 			a1
 		};
 		s2tc_evaluate_colors_result_null_t<unsigned char> r2;
-		s2tc_try_encode_block<unsigned char, int, 3, false, true, 6>(out, r2, alpha_dist, in, iw, w, h, ramp);
+		s2tc_try_encode_block<unsigned char, int, 3, false, true, 2>(out, r2, alpha_dist, in, iw, w, h, ramp);
 	}
 
 	// REFINE_LOOP: refine, take result over only if score improved, loop until it did not
@@ -1285,7 +1285,6 @@ namespace
 						}
 						else
 						{
-							int alphadiffuse = 8 - alphabits;
 							for(y = 0; y < h; ++y)
 								for(x = 0; x < w; ++x)
 									out[(x + y * w) * 4 + 3] = rgba[(x + y * w) * srccomps + 3] >> (8 - alphabits);
