@@ -233,8 +233,6 @@ unsigned char *LoadTGA_BGRA (const unsigned char *f, int filesize)
 		row_inci = 0;
 	}
 
-	x = 0;
-	y = 0;
 	pix_inc = 1;
 	if ((targa_header.image_type & ~8) == 2)
 		pix_inc = (targa_header.pixel_size + 7) / 8;
@@ -508,8 +506,12 @@ unsigned char *FS_LoadFile(const char *fn, int *len)
 		return NULL;
 	for(;;)
 	{
-		buf = (unsigned char *) realloc(buf, *len + 65536);
-		if(!buf)
+		unsigned char *newbuf = (unsigned char *) realloc(buf, *len + 65536);
+		if(newbuf)
+		{
+			buf = newbuf;
+		}
+		else
 		{
 			if(fn)
 				fclose(f);

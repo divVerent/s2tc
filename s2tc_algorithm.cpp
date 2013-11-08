@@ -34,35 +34,104 @@
 
 namespace
 {
+	template<class T> struct color_type_info
+	{
+	};
+	template<> struct color_type_info<unsigned char>
+	{
+		static const unsigned char min_value = 0;
+		static const unsigned char max_value = 255;
+	};
+
 	struct color_t
 	{
 		signed char r, g, b;
-
-		inline color_t(): r(0), g(0), b(0)
-		{
-		}
-
-		inline color_t(signed char r_, signed char g_, signed char b_): r(r_), g(g_), b(b_)
-		{
-		}
-
-		inline color_t(int i): r(i >> 3), g(i >> 2), b(i >> 3)
-		{
-		}
-
-		inline bool operator<(const color_t &c)
-		{
-			signed char d;
-			d = r - c.r;
-			if(d)
-				return d < 0;
-			d = g - c.g;
-			if(d)
-				return d < 0;
-			d = b - c.b;
-			return d < 0;
-		}
 	};
+	inline color_t make_color_t()
+	{
+		return (color_t) {0, 0, 0};
+	}
+	inline color_t make_color_t(signed char r_, signed char g_, signed char b_)
+	{
+		return (color_t) {r_, g_, b_};
+	}
+	inline color_t make_color_t(int i)
+	{
+		return (color_t) {(signed char)(i >> 3), (signed char)(i >> 2), (signed char)(i >> 3)};
+	}
+	inline bool operator==(const color_t &a, const color_t &b)
+	{
+		return a.r == b.r && a.g == b.g && a.b == b.b;
+	}
+	inline bool operator<(const color_t &a, const color_t &b)
+	{
+		signed char d;
+		d = a.r - b.r;
+		if(d)
+			return d < 0;
+		d = a.g - b.g;
+		if(d)
+			return d < 0;
+		d = a.b - b.b;
+		return d < 0;
+	}
+	inline color_t &operator--(color_t &c)
+	{
+		if(c.b > 0)
+		{
+			--c.b;
+		}
+		else if(c.g > 0)
+		{
+			c.b = 31;
+			--c.g;
+		}
+		else if(c.r > 0)
+		{
+			c.b = 31;
+			c.g = 63;
+			--c.r;
+		}
+		else
+		{
+			c.b = 31;
+			c.g = 63;
+			c.r = 31;
+		}
+		return c;
+	}
+	inline color_t &operator++(color_t &c)
+	{
+		if(c.b < 31)
+		{
+			++c.b;
+		}
+		else if(c.g < 63)
+		{
+			c.b = 0;
+			++c.g;
+		}
+		else if(c.r < 31)
+		{
+			c.b = 0;
+			c.g = 0;
+			++c.r;
+		}
+		else
+		{
+			c.b = 0;
+			c.g = 0;
+			c.r = 0;
+		}
+		return c;
+	}
+	template<> struct color_type_info<color_t>
+	{
+		static const color_t min_value;
+		static const color_t max_value;
+	};
+	const color_t color_type_info<color_t>::min_value = { 0, 0, 0 };
+	const color_t color_type_info<color_t>::max_value = { 31, 63, 31 };
 
 	struct bigcolor_t
 	{
@@ -137,7 +206,7 @@ namespace
 
 	std::ostream &operator<<(std::ostream &ost, const color_t &c)
 	{
-		return ost << "color_t(" << int(c.r) << ", " << int(c.g) << ", " << int(c.b) << ")";
+		return ost << "make_color_t(" << int(c.r) << ", " << int(c.g) << ", " << int(c.b) << ")";
 	}
 
 	std::ostream &operator<<(std::ostream &ost, const bigcolor_t &c)
@@ -336,10 +405,9 @@ namespace
 					bestj = j;
 				}
 			}
-		if(besti != 0)
-			c[0] = c[besti];
-		if(bestj != 1)
-			c[1] = c[bestj];
+		T c0 = c[besti];
+		c[1] = c[bestj];
+		c[0] = c0;
 	}
 	template <class T, class F>
 	inline void reduce_colors_inplace_2fixpoints(T *c, int n, int m, F dist, const T &fix0, const T &fix1)
@@ -617,7 +685,7 @@ namespace
 			}
 			if(have_0_255)
 			{
-				int dist_0 = ColorDist(color, 0);
+				int dist_0 = ColorDist(color, color_type_info<T>::min_value);
 				if(dist_0 <= bestdist)
 				{
 					bestdist = dist_0;
@@ -625,7 +693,7 @@ namespace
 					score += bestdist;
 					continue;
 				}
-				int dist_255 = ColorDist(color, 255);
+				int dist_255 = ColorDist(color, color_type_info<T>::max_value);
 				if(dist_255 <= bestdist)
 				{
 					bestdist = dist_255;
@@ -709,6 +777,19 @@ namespace
 		}
 		if(mode_le)
 		{
+			if(a1 == a0)
+			{
+				if(a0 == 255)
+					--a1;
+				else
+					++a1;
+				for(int i = 0; i < 16; ++i) switch(out.get(i))
+				{
+					case 1:
+						out.set(i, 0);
+						break;
+				}
+			}
 			if(a1 < a0)
 			{
 				std::swap(a0, a1);
@@ -786,7 +867,19 @@ namespace
 		{
 			out = out5;
 			r5.evaluate(a0, a1);
-
+			if(a1 == a0)
+			{
+				if(a0 == 255)
+					--a1;
+				else
+					++a1;
+				for(int i = 0; i < 16; ++i) switch(out.get(i))
+				{
+					case 1:
+						out.set(i, 0);
+						break;
+				}
+			}
 			if(a1 < a0)
 			{
 				std::swap(a0, a1);
@@ -811,7 +904,6 @@ namespace
 		{
 			out = out7;
 			r7.evaluate(a0, a1);
-
 			if(a0 < a1)
 			{
 				std::swap(a0, a1);
@@ -866,7 +958,19 @@ namespace
 		if(s5 < s7)
 		{
 			out = out5;
-
+			if(a1 == a0)
+			{
+				if(a0 == 255)
+					--a1;
+				else
+					++a1;
+				for(int i = 0; i < 16; ++i) switch(out.get(i))
+				{
+					case 1:
+						out.set(i, 0);
+						break;
+				}
+			}
 			if(a1 < a0)
 			{
 				std::swap(a0, a1);
@@ -890,7 +994,6 @@ namespace
 		else
 		{
 			out = out7;
-
 			if(a0 < a1)
 			{
 				std::swap(a0, a1);
@@ -944,6 +1047,18 @@ namespace
 				break;
 			out2.clear();
 		}
+
+		if(c0 == c1)
+		{
+			if(c0 == color_type_info<color_t>::max_value)
+				--c1;
+			else
+				++c1;
+			for(int i = 0; i < 16; ++i)
+				if(!(out.get(i) == 1))
+					out.set(i, 0);
+		}
+
 		if(have_trans ? c1 < c0 : c0 < c1)
 		{
 			std::swap(c0, c1);
@@ -964,6 +1079,18 @@ namespace
 		s2tc_evaluate_colors_result_t<color_t, bigcolor_t, 1> r2;
 		s2tc_try_encode_block<color_t, bigcolor_t, 2, have_trans, false, 2>(out, r2, ColorDist, in, iw, w, h, ramp);
 		r2.evaluate(c0, c1);
+
+		if(c0 == c1)
+		{
+			if(c0 == color_type_info<color_t>::max_value)
+				--c1;
+			else
+				++c1;
+			for(int i = 0; i < 16; ++i)
+				if(!(out.get(i) == 1))
+					out.set(i, 0);
+		}
+
 		if(have_trans ? c1 < c0 : c0 < c1)
 		{
 			std::swap(c0, c1);
@@ -1002,16 +1129,15 @@ namespace
 	{
 		color_t c[16 + (nrandom >= 0 ? nrandom : 0)];
 		unsigned char ca[16 + (nrandom >= 0 ? nrandom : 0)];
-		int n = 0, m = 0;
 		int x, y;
 
 		if(mode == MODE_FAST)
 		{
 			// FAST: trick from libtxc_dxtn: just get brightest and darkest colors, and encode using these
 
-			color_t c0(0);
+			color_t c0 = make_color_t(0, 0, 0);
 
-			// dummy values because we don't know whether the first pixel willw rite
+			// dummy values because we don't know whether the first pixel will write
 			c[0].r = 31;
 			c[0].g = 63;
 			c[0].b = 31;
@@ -1033,9 +1159,10 @@ namespace
 					c[2].g = rgba[(x + y * iw) * 4 + 1];
 					c[2].b = rgba[(x + y * iw) * 4 + 2];
 					ca[2]  = rgba[(x + y * iw) * 4 + 3];
+					if (dxt == DXT1)
+						if(ca[2] == 0)
+							continue;
 					// MODE_FAST doesn't work for normalmaps, so this works
-					if(!ca[2])
-						continue;
 
 					int d = ColorDist(c[2], c0);
 					if(d > dmax)
@@ -1060,13 +1187,11 @@ namespace
 						}
 					}
 				}
-
-			// if ALL pixels were transparent, this won't stop us
-
-			m = n = 2;
 		}
 		else
 		{
+			int n = 0, m = 0;
+
 			for(x = 0; x < w; ++x)
 				for(y = 0; y < h; ++y)
 				{
@@ -1074,6 +1199,9 @@ namespace
 					c[n].g = rgba[(x + y * iw) * 4 + 1];
 					c[n].b = rgba[(x + y * iw) * 4 + 2];
 					ca[n]  = rgba[(x + y * iw) * 4 + 3];
+					if (dxt == DXT1)
+						if(ca[n] == 0)
+							continue;
 					++n;
 				}
 			if(n == 0)
@@ -1106,7 +1234,7 @@ namespace
 						maxa = max(maxa, ca[x]);
 					}
 				}
-				color_t len(maxs.r - mins.r + 1, maxs.g - mins.g + 1, maxs.b - mins.b + 1);
+				color_t len = make_color_t(maxs.r - mins.r + 1, maxs.g - mins.g + 1, maxs.b - mins.b + 1);
 				int lena = (dxt == DXT5) ? (maxa - (int) mina + 1) : 0;
 				for(x = 0; x < nrandom; ++x)
 				{
@@ -1131,6 +1259,26 @@ namespace
 			reduce_colors_inplace(c, n, m, ColorDist);
 			if(dxt == DXT5)
 				reduce_colors_inplace_2fixpoints(ca, n, m, alpha_dist, (unsigned char) 0, (unsigned char) 255);
+		}
+
+		// equal colors are BAD
+		if(c[0] == c[1])
+		{
+			if(c[0] == color_type_info<color_t>::max_value)
+				--c[1];
+			else
+				++c[1];
+		}
+
+		if(dxt == DXT5)
+		{
+			if(ca[0] == ca[1])
+			{
+				if(ca[0] == 255)
+					--ca[1];
+				else
+					++ca[1];
+			}
 		}
 
 		switch(dxt)
@@ -1243,7 +1391,7 @@ namespace
 	template<DxtMode dxt, ColorDistFunc ColorDist>
 	inline s2tc_encode_block_func_t s2tc_encode_block_func(int nrandom, RefinementMode refine)
 	{
-		if(!supports_fast<ColorDist>::value  || nrandom >= 0)
+		if(!supports_fast<ColorDist>::value || nrandom >= 0)
 			return s2tc_encode_block_func<dxt, ColorDist, MODE_NORMAL>(refine);
 		else
 			return s2tc_encode_block_func<dxt, ColorDist, MODE_FAST>(refine);
@@ -1395,7 +1543,6 @@ namespace
 						}
 						else
 						{
-							int alphadiffuse = 8 - alphabits;
 							for(y = 0; y < h; ++y)
 								for(x = 0; x < w; ++x)
 									out[(x + y * w) * 4 + 3] = rgba[(x + y * w) * srccomps + 3] >> (8 - alphabits);
@@ -1561,8 +1708,10 @@ void rgb565_image(unsigned char *out, const unsigned char *rgba, int w, int h, i
 	{
 		case 3:
 			rgb565_image<3>(out, rgba, w, h, alphabits, dither);
+			break;
 		case 4:
 		default:
 			rgb565_image<4>(out, rgba, w, h, alphabits, dither);
+			break;
 	}
 }
