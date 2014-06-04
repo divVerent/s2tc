@@ -10,8 +10,8 @@ s2tc_from_s3tc_SOURCES = s2tc_from_s3tc.cpp s2tc_license.h
 s2tc_compress_SOURCES = s2tc_compress.cpp txc_dxtn.h s2tc_license.h
 s2tc_decompress_SOURCES = s2tc_decompress.cpp txc_dxtn.h s2tc_license.h
 if ENABLE_RUNTIME_LINKING
-s2tc_compress_LDADD = -ldl
-s2tc_decompress_LDADD = -ldl
+s2tc_compress_LDADD = $(LIBDL_LDADD)
+s2tc_decompress_LDADD = $(LIBDL_LDADD)
 else
 if ENABLE_LIB
 s2tc_compress_LDADD = libtxc_dxtn.la

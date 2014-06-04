@@ -27,6 +27,15 @@ AS_IF([test x"$enable_runtime_linking" = xno], ,
 	[AS_IF([test x"$enable_dlopen" != xno], ,
 		[AC_MSG_ERROR([dynamic linking not possible, try --disable-runtime-linking])])])
 
+if test x"$enable_runtime_linking" = xyes; then
+	case "$host_os" in
+	linux*)
+		LIBDL_LDADD='-ldl'
+		;;
+	esac
+fi
+AC_SUBST(LIBDL_LDADD)
+
 AC_CONFIG_FILES([Makefile txc_dxtn.pc])
 
 AC_OUTPUT
