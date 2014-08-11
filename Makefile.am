@@ -33,6 +33,12 @@ library_includedir = $(includedir)
 library_include_HEADERS = txc_dxtn.h
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_HEADERS = txc_dxtn.pc
+
+# We need a .so only
+# Fixes: https://bugzilla.novell.com/show_bug.cgi?id=890953
+install-data-hook: install-libLTLIBRARIES
+	mv $(DESTDIR)$(libdir)/libtxc_dxtn.so.0.0.0 $(DESTDIR)$(libdir)/libtxc_dxtn.so; \
+	rm -f $(DESTDIR)$(libdir)/libtxc_dxtn.so.0
 endif
 
 # versioninfo:
