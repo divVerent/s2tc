@@ -12,6 +12,7 @@ environment variable `S2TC_COLORDIST_MODE`:
 *   `SRGB_MIXED`: weighted "Y'(Y)Cb'Cr'" difference assuming sRGB input
 *   `AVG`: standard average of component difference (generic)
 *   `WAVG`: weighted RGB average of component difference
+*   `W0AVG`: superfast weighted RGB average of component difference
 *   `NORMALMAP`: vector distance after normalization
 
 The default is `WAVG`, which is a good compromise between speed and quality for
