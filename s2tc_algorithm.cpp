@@ -228,6 +228,15 @@ namespace
 		return ((dr*dr) << 2) + dg*dg + ((db*db) << 2);
 	}
 
+	inline int color_dist_w0avg(const color_t &a, const color_t &b)
+	{
+		int dr = a.r - b.r; // multiplier: 31 (-1..1)
+		int dg = a.g - b.g; // multiplier: 63 (-1..1)
+		int db = a.b - b.b; // multiplier: 31 (-1..1)
+		return dr*dr + dg*dg + db*db;
+		// weighted 1:4:1
+	}
+
 	inline int color_dist_wavg(const color_t &a, const color_t &b)
 	{
 		int dr = a.r - b.r; // multiplier: 31 (-1..1)
@@ -1180,6 +1189,9 @@ s2tc_encode_block_func_t s2tc_encode_block_func(DxtMode dxt, ColorDistMode cd, i
 		default:
 		case WAVG:
 			return s2tc_encode_block_func<color_dist_wavg>(dxt, nrandom, refine);
+			break;
+		case W0AVG:
+			return s2tc_encode_block_func<color_dist_w0avg>(dxt, nrandom, refine);
 			break;
 		case NORMALMAP:
 			return s2tc_encode_block_func<color_dist_normalmap>(dxt, nrandom, refine);
