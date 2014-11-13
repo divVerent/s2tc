@@ -187,6 +187,8 @@ void tx_compress_dxtn(GLint srccomps, GLint width, GLint height,
 				cd = AVG;
 			else if(!strcasecmp(v, "WAVG"))
 				cd = WAVG;
+			else if(!strcasecmp(v, "W0AVG"))
+				cd = W0AVG;
 			else if(!strcasecmp(v, "NORMALMAP"))
 				cd = NORMALMAP;
 			else
