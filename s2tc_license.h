@@ -1,10 +1,11 @@
-// A helper source file to include the license text into the shared library
-//
-// We do this to ensure that the only condition of the MIT license is
-// automatically fulfilled without another program author doing anything
-// special.
+/* A helper source file to include the license text into the shared library
+ *
+ * We do this to ensure that the only condition of the MIT license is
+ * automatically fulfilled without another program author doing anything
+ * special.
+ */
 
-// NOTE: this is NOT static! We WANT to create an external symbol of this.
+/* NOTE: this is NOT static! We WANT to create an external symbol of this. */
 const char *S2TC_LICENSE_IDENTIFIER =
 "Copyright (C) 2011  Rudolf Polzer   All Rights Reserved.\n"
 "\n"

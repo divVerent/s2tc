@@ -21,25 +21,22 @@
 #define S2TC_LICENSE_IDENTIFIER s2tc_compress_license
 #include "s2tc_license.h"
 
+#include <getopt.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
-#include <getopt.h>
-#include <algorithm>
-#include "s2tc_common.h"
+#include <strings.h>
 
 #ifdef ENABLE_RUNTIME_LINKING
 #include <dlfcn.h>
 #include <GL/gl.h>
-extern "C"
-{
-	typedef void (tx_compress_dxtn_t)(GLint srccomps, GLint width, GLint height,
-			      const GLubyte *srcPixData, GLenum destformat,
-			      GLubyte *dest, GLint dstRowStride);
-};
+typedef void (tx_compress_dxtn_t)(GLint srccomps, GLint width, GLint height,
+		      const GLubyte *srcPixData, GLenum destformat,
+		      GLubyte *dest, GLint dstRowStride);
 tx_compress_dxtn_t *tx_compress_dxtn = NULL;
-inline bool load_libraries(const char *n)
+bool load_libraries(const char *n)
 {
 	void *l = dlopen(n, RTLD_NOW);
 	if(!l)
@@ -57,10 +54,7 @@ inline bool load_libraries(const char *n)
 	return true;
 }
 #else
-extern "C"
-{
 #include "txc_dxtn.h"
-};
 #endif
 
 /* START stuff that originates from image.c in DarkPlaces */
@@ -429,13 +423,14 @@ unsigned char *LoadTGA_BGRA (const unsigned char *f, int filesize)
 	return image_buffer;
 }
 
-// in can be the same as out
+/* in can be the same as out */
 void Image_MipReduce32(const unsigned char *in, unsigned char *out, int *width, int *height, int destwidth, int destheight)
 {
 	const unsigned char *inrow;
 	int x, y, nextrow;
-	// note: if given odd width/height this discards the last row/column of
-	// pixels, rather than doing a proper box-filter scale down
+	/* note: if given odd width/height this discards the last row/column of
+	 * pixels, rather than doing a proper box-filter scale down
+	 */
 	inrow = in;
 	nextrow = *width * 4;
 	if (*width > destwidth)
@@ -443,7 +438,7 @@ void Image_MipReduce32(const unsigned char *in, unsigned char *out, int *width, 
 		*width >>= 1;
 		if (*height > destheight)
 		{
-			// reduce both
+			/* reduce both */
 			*height >>= 1;
 			for (y = 0;y < *height;y++, inrow += nextrow * 2)
 			{
@@ -460,7 +455,7 @@ void Image_MipReduce32(const unsigned char *in, unsigned char *out, int *width, 
 		}
 		else
 		{
-			// reduce width
+			/* reduce width */
 			for (y = 0;y < *height;y++, inrow += nextrow)
 			{
 				for (in = inrow, x = 0;x < *width;x++)
@@ -479,7 +474,7 @@ void Image_MipReduce32(const unsigned char *in, unsigned char *out, int *width, 
 	{
 		if (*height > destheight)
 		{
-			// reduce height
+			/* reduce height */
 			*height >>= 1;
 			for (y = 0;y < *height;y++, inrow += nextrow * 2)
 			{
@@ -570,8 +565,13 @@ int usage(const char *me)
 
 int main(int argc, char **argv)
 {
-	GLenum dxt = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
 	const char *infile = NULL, *outfile = NULL;
+	FILE *outfh;
+	unsigned char *picdata, *pic;
+	int x, mipcount, piclen;
+	const char *fourcc;
+	int blocksize;
+	GLenum dxt = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
 
 #ifdef ENABLE_RUNTIME_LINKING
 	const char *library = "libtxc_dxtn.so";
@@ -617,31 +617,31 @@ int main(int argc, char **argv)
 		return 1;
 #endif
 
-	FILE *outfh = outfile ? fopen(outfile, "wb") : stdout;
+	outfh = outfile ? fopen(outfile, "wb") : stdout;
 	if(!outfh)
 	{
 		printf("opening output failed\n");
 		return 2;
 	}
 
-	int piclen;
-	unsigned char *picdata = FS_LoadFile(infile, &piclen);
+	picdata = FS_LoadFile(infile, &piclen);
 	if(!picdata)
 	{
 		printf("FS_LoadFile failed\n");
 		return 2;
 	}
 
-	unsigned char *pic = LoadTGA_BGRA(picdata, piclen);
-	for(int x = 0; x < image_width*image_height; ++x)
-		std::swap(pic[4*x], pic[4*x+2]);
-	int mipcount = 0;
+	pic = LoadTGA_BGRA(picdata, piclen);
+	for(x = 0; x < image_width*image_height; ++x) {
+		unsigned char h = pic[4*x];
+		pic[4*x] = pic[4*x+2];
+		pic[4*x+2] = h;
+	}
+	mipcount = 0;
 	while(image_width >= (1 << mipcount) || image_height >= (1 << mipcount))
 		++mipcount;
-	// now, (1 << mipcount) >= width, height
+	/* now, (1 << mipcount) >= width, height */
 
-	const char *fourcc;
-	int blocksize;
 	switch(dxt)
 	{
 		case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
@@ -660,22 +660,25 @@ int main(int argc, char **argv)
 	}
 
 	{
+		uint32_t zero = LittleLong(0);
 		bool alphapixels = false;
-		for(int y = 0; y < image_height; ++y)
-			for(int x = 0; x < image_width; ++x)
+		int x, y;
+		uint32_t dds_picsize, dds_mipcount, dds_width, dds_height;
+
+		for(y = 0; y < image_height; ++y)
+			for(x = 0; x < image_width; ++x)
 				if(pic[(y*image_width+x)*4+3] != 255)
 				{
 					alphapixels = true;
 					break;
 				}
 
-		uint32_t zero = LittleLong(0);
-		uint32_t dds_picsize = LittleLong(((image_width+3)/4) * ((image_height+3)/4) * blocksize);
-		uint32_t dds_mipcount = LittleLong(mipcount);
-		uint32_t dds_width = LittleLong(image_width);
-		uint32_t dds_height = LittleLong(image_height);
+		dds_picsize = LittleLong(((image_width+3)/4) * ((image_height+3)/4) * blocksize);
+		dds_mipcount = LittleLong(mipcount);
+		dds_width = LittleLong(image_width);
+		dds_height = LittleLong(image_height);
 
-		//0
+		/* 0 */
 		fwrite("DDS ", 4, 1, outfh);
 		fwrite("\x7c\x00\x00\x00", 4, 1, outfh);
 		fwrite("\x07\x10\x0a\x00", 4, 1, outfh);
@@ -685,7 +688,7 @@ int main(int argc, char **argv)
 		fwrite(&zero, 4, 1, outfh);
 		fwrite(&dds_mipcount, 4, 1, outfh);
 
-		//32
+		/* 32 */
 		fwrite(&zero, 4, 1, outfh);
 		fwrite(&zero, 4, 1, outfh);
 		fwrite(&zero, 4, 1, outfh);
@@ -695,7 +698,7 @@ int main(int argc, char **argv)
 		fwrite(&zero, 4, 1, outfh);
 		fwrite(&zero, 4, 1, outfh);
 
-		//64
+		/* 64 */
 		fwrite(&zero, 4, 1, outfh);
 		fwrite(&zero, 4, 1, outfh);
 		fwrite(&zero, 4, 1, outfh);
@@ -705,7 +708,7 @@ int main(int argc, char **argv)
 		fwrite(&zero, 4, 1, outfh);
 		fwrite(&zero, 4, 1, outfh);
 
-		//96
+		/* 96 */
 		fwrite(&zero, 4, 1, outfh);
 		fwrite(&zero, 4, 1, outfh);
 		fwrite(&zero, 4, 1, outfh);

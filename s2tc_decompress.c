@@ -24,30 +24,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <getopt.h>
-#include <algorithm>
-#include "s2tc_common.h"
 
 #ifdef ENABLE_RUNTIME_LINKING
 #include <dlfcn.h>
 #include <GL/gl.h>
-extern "C"
-{
-	typedef void (fetch_2d_texel_rgb_dxt1_t)(GLint srcRowStride, const GLubyte *pixdata,
+typedef void (fetch_2d_texel_rgb_dxt1_t)(GLint srcRowStride, const GLubyte *pixdata,
+		     GLint i, GLint j, GLvoid *texel);
+typedef void (fetch_2d_texel_rgba_dxt1_t)(GLint srcRowStride, const GLubyte *pixdata,
+		     GLint i, GLint j, GLvoid *texel);
+typedef void (fetch_2d_texel_rgba_dxt3_t)(GLint srcRowStride, const GLubyte *pixdata,
+		     GLint i, GLint j, GLvoid *texel);
+typedef void (fetch_2d_texel_rgba_dxt5_t)(GLint srcRowStride, const GLubyte *pixdata,
 			     GLint i, GLint j, GLvoid *texel);
-	typedef void (fetch_2d_texel_rgba_dxt1_t)(GLint srcRowStride, const GLubyte *pixdata,
-			     GLint i, GLint j, GLvoid *texel);
-	typedef void (fetch_2d_texel_rgba_dxt3_t)(GLint srcRowStride, const GLubyte *pixdata,
-			     GLint i, GLint j, GLvoid *texel);
-	typedef void (fetch_2d_texel_rgba_dxt5_t)(GLint srcRowStride, const GLubyte *pixdata,
-				     GLint i, GLint j, GLvoid *texel);
-};
 fetch_2d_texel_rgb_dxt1_t *fetch_2d_texel_rgb_dxt1 = NULL;
 fetch_2d_texel_rgba_dxt1_t *fetch_2d_texel_rgba_dxt1 = NULL;
 fetch_2d_texel_rgba_dxt3_t *fetch_2d_texel_rgba_dxt3 = NULL;
 fetch_2d_texel_rgba_dxt5_t *fetch_2d_texel_rgba_dxt5 = NULL;
-inline bool load_libraries(const char *n)
+bool load_libraries(const char *n)
 {
 	void *l = dlopen(n, RTLD_NOW);
 	if(!l)
@@ -68,10 +64,7 @@ inline bool load_libraries(const char *n)
 	return true;
 }
 #else
-extern "C"
-{
 #include "txc_dxtn.h"
-};
 #endif
 
 uint32_t LittleLong(uint32_t w)
@@ -106,6 +99,11 @@ int usage(const char *me)
 int main(int argc, char **argv)
 {
 	const char *infile = NULL, *outfile = NULL;
+	FILE *infh, *outfh;
+	uint32_t h[32];
+	int x, y, width, height, n;
+	unsigned char t[18];
+	unsigned char *buf;
 
 #ifdef ENABLE_RUNTIME_LINKING
 	const char *library = "libtxc_dxtn.so";
@@ -141,24 +139,23 @@ int main(int argc, char **argv)
 		return 1;
 #endif
 
-	FILE *infh = infile ? fopen(infile, "rb") : stdin;
+	infh = infile ? fopen(infile, "rb") : stdin;
 	if(!infh)
 	{
 		printf("opening input failed\n");
 		return 2;
 	}
 
-	FILE *outfh = outfile ? fopen(outfile, "wb") : stdout;
+	outfh = outfile ? fopen(outfile, "wb") : stdout;
 	if(!outfh)
 	{
 		printf("opening output failed\n");
 		return 2;
 	}
 
-	uint32_t h[32];
 	fread(h, sizeof(h), 1, infh);
-	int height = LittleLong(h[3]);
-	int width = LittleLong(h[4]);
+	height = LittleLong(h[3]);
+	width = LittleLong(h[4]);
 
 	void (*fetch)(GLint srcRowStride, const GLubyte *pixdata, GLint i, GLint j, GLvoid *texel) = NULL;
 	int fourcc = LittleLong(h[21]);
@@ -182,7 +179,6 @@ int main(int argc, char **argv)
 			return 1;
 	}
 
-	unsigned char t[18];
 	memset(t, 0, 18);
 	t[2]  = 2;
 	t[12] = width % 256;
@@ -193,17 +189,19 @@ int main(int argc, char **argv)
 	t[17] = 0x28;
 	fwrite(t, 18, 1, outfh);
 
-	int n = ((width + 3) / 4) * ((height + 3) / 4);
-	unsigned char *buf = (unsigned char *) malloc(n * blocksize);
+	n = ((width + 3) / 4) * ((height + 3) / 4);
+	buf = (unsigned char *) malloc(n * blocksize);
 	fread(buf, blocksize, n, infh);
 
-	int x, y;
 	for(y = 0; y < height; ++y)
 		for(x = 0; x < width; ++x)
 		{
 			char data[4];
+			char h;
 			fetch(width, buf, x, y, &data);
-			std::swap(data[0], data[2]);
+			h = data[0];
+			data[0] = data[2];
+			data[2] = h;
 			fwrite(data, 4, 1, outfh);
 		}
 
