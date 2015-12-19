@@ -196,17 +196,9 @@ xon textures/screens/screen_toggle0.tga disabled.tga
 xon textures/facility114x/misc/lift02.tga lift02.tga
 # sunset: GPLv2+
 xon env/distant_sunset/distant_sunset_rt.jpg sunset.tga
-# amelia: no license
-if ! [ -f "amelia.tga" ]; then
-	wget -O- "http://www.godoon.com/gallery/media/slayers/amelia-wil-tesla-saillune/49212997-d81e-11df-8228-a8bfc396a36f.jpg" | convert JPG:- amelia.tga
-fi
-# grass: no license
-if ! [ -f "ba_grass_cc.tga" ]; then
-	wget -O- http://sauerbraten.svn.sourceforge.net/viewvc/sauerbraten/packages/blindabuser/ba_grass_cc.jpg | convert JPG:- ba_grass_cc.tga
-fi
 
 export LD_LIBRARY_PATH="$PWD/lib"
-for i in ba_grass_cc dxtfail floor_tread01_norm fract001 base_concrete1a disabled lift02 sunset amelia noise noise_solid supernova; do
+for i in dxtfail floor_tread01_norm fract001 base_concrete1a disabled lift02 sunset noise noise_solid supernova; do
 	html_rowstart "$i"
 
 	html "$i".tga
