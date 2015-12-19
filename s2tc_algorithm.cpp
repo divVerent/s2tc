@@ -26,14 +26,18 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
-#include <algorithm>
-#include <iostream>
 
 #include "s2tc_algorithm.h"
 #include "s2tc_common.h"
 
 namespace
 {
+	template<class T> void swap(T& a, T& b)
+	{
+		T h = a;
+		a = b;
+		b = h;
+	}
 	template<class T> struct color_type_info
 	{
 	};
@@ -203,16 +207,6 @@ namespace
 			return out;
 		}
 	};
-
-	std::ostream &operator<<(std::ostream &ost, const color_t &c)
-	{
-		return ost << "make_color_t(" << int(c.r) << ", " << int(c.g) << ", " << int(c.b) << ")";
-	}
-
-	std::ostream &operator<<(std::ostream &ost, const bigcolor_t &c)
-	{
-		return ost << "bigcolor_t(" << c.r << ", " << c.g << ", " << c.b << ")";
-	}
 
 	// 16 differences must fit in int
 	// i.e. a difference must be lower than 2^27
@@ -692,7 +686,7 @@ namespace
 
 		if(a1 < a0)
 		{
-			std::swap(a0, a1);
+			swap(a0, a1);
 			for(int i = 0; i < 16; ++i) switch(out.get(i))
 			{
 				case 0:
@@ -738,7 +732,7 @@ namespace
 
 		if(a1 < a0)
 		{
-			std::swap(a0, a1);
+			swap(a0, a1);
 			for(int i = 0; i < 16; ++i) switch(out.get(i))
 			{
 				case 0:
@@ -761,7 +755,7 @@ namespace
 	inline void s2tc_dxt5_encode_alpha_refine_never(bitarray<uint64_t, 16, 3> &out, const unsigned char *in, int iw, int w, int h, unsigned char &a0, unsigned char &a1)
 	{
 		if(a1 < a0)
-			std::swap(a0, a1);
+			swap(a0, a1);
 		unsigned char ramp[6] = {
 			a0,
 			a1
@@ -812,7 +806,7 @@ namespace
 
 		if(have_trans ? c1 < c0 : c0 < c1)
 		{
-			std::swap(c0, c1);
+			swap(c0, c1);
 			for(int i = 0; i < 16; ++i)
 				if(!(out.get(i) & 2))
 					out.do_xor(i, 1);
@@ -844,7 +838,7 @@ namespace
 
 		if(have_trans ? c1 < c0 : c0 < c1)
 		{
-			std::swap(c0, c1);
+			swap(c0, c1);
 			for(int i = 0; i < 16; ++i)
 				if(!(out.get(i) & 2))
 					out.do_xor(i, 1);
@@ -856,7 +850,7 @@ namespace
 	inline void s2tc_dxt1_encode_color_refine_never(bitarray<uint32_t, 16, 2> &out, const unsigned char *in, int iw, int w, int h, color_t &c0, color_t &c1)
 	{
 		if(have_trans ? c1 < c0 : c0 < c1)
-			std::swap(c0, c1);
+			swap(c0, c1);
 		color_t ramp[2] = {
 			c0,
 			c1

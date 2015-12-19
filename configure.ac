@@ -4,6 +4,7 @@ AM_INIT_AUTOMAKE([-Wall foreign])
 
 have_CXXFLAGS=${CXXFLAGS+set}
 AC_PROG_CXX
+AM_PROG_AR
 # better default optimization flags for g++, please
 if test "$have_CXXFLAGS" != set; then
 	if test "$GXX" = yes; then
@@ -12,6 +13,9 @@ if test "$have_CXXFLAGS" != set; then
 fi
 
 AC_PROG_LIBTOOL
+
+# Disable dependency on libstdc++ for the .so library.
+postdeps_CXX=`echo " $postdeps_CXX " | sed 's, -lstdc++ , ,g'`
 
 AC_ARG_ENABLE(runtime-linking, AS_HELP_STRING([--disable-runtime-linking], [Do not load the library at runtime (faster startup, more dependencies)]), [enable_runtime_linking=$enableval], [enable_runtime_linking=yes])
 AC_ARG_ENABLE(tools, AS_HELP_STRING([--disable-tools], [Do not build the s2tc_compress and s2_decompress tools]), [enable_tools=$enableval], [enable_tools=yes])
