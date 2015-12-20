@@ -35,9 +35,4 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_HEADERS = txc_dxtn.pc
 endif
 
-# versioninfo:
-#   - compatible interface change: c:r:a -> c+1:0:a+1
-#   - incompatible interface change: c:r:a -> c+1:0:0
-#   - internal change: c:r:a -> c:r+1:a
-
 EXTRA_DIST = README.txt autogen.sh
