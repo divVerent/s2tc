@@ -1,0 +1,27 @@
+.TH S2TC_DECOMPRESS 1 "December 26, 2015"
+.\" Please adjust this date whenever revising the manpage.
+.SH NAME
+s2tc_decompress \- Decompresses the texture into an image
+.SH SYNOPSIS
+\fBs2tc_decompress\fP
+.SH DESCRIPTION
+s2tc_decompress allows decompression of S2TC format textures
+into TGA images.
+.SH OPTIONS
+.TP
+.BI -i
+\fIINFILE.dds\fP
+.TP
+.BI -o
+\fIOUTFILE.tga\fP
+.TP
+.BI -l
+\fIlibtxc_dxtn.so\fP
+Path to an implementation of libtxc-dxtn
+.TP
+
+.SH AUTHOR
+s2tc_decompress is part of the S2TC toolset
+.PP
+This manual page was written by Lennart Weller <lhw@ring0.de>,
+for the Debian project (but may be used by others).

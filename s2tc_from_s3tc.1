@@ -1,0 +1,27 @@
+.TH S2TC_FROM_S3TC 1 "December 26, 2015"
+.\" Please adjust this date whenever revising the manpage.
+.SH NAME
+s2tc_from_s3tc \- Convert a S3TC format texture into S2TC format one.
+.SH SYNOPSIS
+\fBs2tc_from_s3tc\fP
+.SH DESCRIPTION
+s2tc_from_s3tc allows a very simple conversion without any kind of
+dithering conversion of S3TC format textures into S2TC format ones
+using the lossy algorithm implemented in S2TC.
+
+It is faster but yields lower quality than decompressing using a
+s3tc tool and also even worse than s2tc_decompress.
+.SH OPTIONS
+.TP
+.BI -i
+\fIINFILE.dds\fP
+.TP
+.BI -o
+\fIOUTFILE.dds\fP
+.TP
+
+.SH AUTHOR
+s2tc_from_s3tc is part of the S2TC toolset
+.PP
+This manual page was written by Lennart Weller <lhw@ring0.de>,
+for the Debian project (but may be used by others).

@@ -9,6 +9,7 @@ bin_PROGRAMS = s2tc_compress s2tc_decompress s2tc_from_s3tc
 s2tc_from_s3tc_SOURCES = s2tc_from_s3tc.cpp s2tc_license.h
 s2tc_compress_SOURCES = s2tc_compress.c txc_dxtn.h s2tc_license.h
 s2tc_decompress_SOURCES = s2tc_decompress.c txc_dxtn.h s2tc_license.h
+man1_MANS = s2tc_compress.1 s2tc_decompress.1 s2tc_from_s3tc.1
 if ENABLE_RUNTIME_LINKING
 s2tc_compress_LDADD = $(LIBDL_LDADD)
 s2tc_decompress_LDADD = $(LIBDL_LDADD)

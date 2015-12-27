@@ -1,0 +1,37 @@
+.TH S2TC_COMPRESS 1 "December 26, 2015"
+.\" Please adjust this date whenever revising the manpage.
+.SH NAME
+s2tc_compress \- Compress the image into a S2TC format texture.
+.SH SYNOPSIS
+\fBs2tc_compress\fP
+.SH DESCRIPTION
+s2tc_compress allows compression of images into S2TC format textures.
+.SH OPTIONS
+.TP
+.BI -i
+\fIINFILE.tga\fP
+.TP
+.BI -o
+\fIOUTFILE.dds\fP
+.TP
+.BI -t
+One of the following compression algorithms
+.RS
+.BI DXT1
+
+.BI DXT3
+
+.BI DXT5
+
+.RE
+.TP
+.BI -l
+\fIlibtxc_dxtn.so\fP
+Path to an implementation of libtxc-dxtn
+.TP
+
+.SH AUTHOR
+s2tc_compress is part of the S2TC toolset
+.PP
+This manual page was written by Lennart Weller <lhw@ring0.de>,
+for the Debian project (but may be used by others).
