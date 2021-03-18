@@ -1,4 +1,4 @@
-AC_INIT([s2tc], [0.1], [divVerent@xonotic.org])
+AC_INIT([s2tc],[0.1],[divVerent@xonotic.org])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([-Wall foreign])
 
@@ -12,7 +12,7 @@ if test "$have_CXXFLAGS" != set; then
 	fi
 fi
 
-AC_PROG_LIBTOOL
+LT_INIT
 
 # Disable dependency on libstdc++ for the .so library.
 postdeps_CXX=`echo " $postdeps_CXX " | sed 's, -lstdc++ , ,g'`
